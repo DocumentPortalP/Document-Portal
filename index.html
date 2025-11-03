@@ -38,6 +38,7 @@
   .icon-btn{min-width:34px;min-height:34px;border-radius:999px;border:1px solid #cbd5e1;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
   .icon-btn svg{width:16px;height:16px;display:block}
 
+  /* Data table */
   .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:0 0 12px 12px;background:#fff}
   table.data{width:100%;border-collapse:separate;border-spacing:0;font-size:0.96rem}
   .data thead th{position:sticky;top:0;z-index:1;background:#f8fafc;border-bottom:1px solid var(--line);padding:10px;text-align:left;white-space:nowrap;user-select:none;cursor:pointer}
@@ -51,7 +52,13 @@
   .data td.wide, .data th.wide { min-width:420px; }
   .data td.asset, .data th.asset { min-width:260px; white-space:nowrap; }
 
-  .scroll-x-top{ overflow-x:auto; overflow-y:hidden; height:14px; background:#fff; border:1px solid var(--line); border-bottom:0; border-radius:12px 12px 0 0; }
+  .scroll-x-top{
+    overflow-x:auto; overflow-y:hidden;
+    height:14px; background:#fff;
+    border:1px solid var(--line);
+    border-bottom:0;
+    border-radius:12px 12px 0 0;
+  }
   .scroll-x-top::-webkit-scrollbar{height:12px}
   .scroll-x-top::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
   .scroll-x-top::-webkit-scrollbar-track{background:#f8fafc;border-radius:8px}
@@ -111,57 +118,53 @@
   </main>
   <footer></footer>
 
+  <!-- Google Identity Services + Google API client -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
 
   <script>
   /******** CONFIG ********/
-  const CLIENT_ID = '383558298407-fpbk518jrlovpqohkahl4bbf3vhn7qf3.apps.googleusercontent.com';
-  const API_KEY   = 'AIzaSyAU2nAWMCXzURJIxe-tlHXuCzLh5KmQadE';
+  const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
+  const API_KEY   = 'YOUR_PUBLIC_API_KEY';
   const SCOPES    = 'https://www.googleapis.com/auth/drive';
 
+  /* ===== Structure ===== */
   const MACHINES = {
     'Bakery 1': ['Mixing','Fermentation','Fritsch','Proover','Oven','Cooler','Freezer'],
     'Bakery 2': ['Mixing','Fermentation','Spiro','Scarifier','Retarder','Rademaker','Proover','Oven','MIB','Freezer','Cooler','AHU'],
     'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail'],
-    'Other':    ['General'] // posebna grupa: ima samo Documentation + Procedures
+    'Other'   : ['General'] // 4. sekcija na Home; unutar nje samo Documentation + Procedures
   };
 
   const FOLDERS = {
     'Bakery 1': {
-      'Fritsch':      {documentation:'1TtOQv5EThkDJ4c23I7epY40kpL_14M-q', works:'134xHl2fufzon1ran2kB2WsqEkQK4m5EH', electrical:'18DxayxAeo0s9q88h7KGOr21zfPQdstgG', procedures:'1QkNnG6d-RBw2j6EYooxR92vcE9phz0FS'},
-      'Mixing':       {documentation:'1DoHLHHWodvbwTHjhirZBM4BhlDksI_qw', works:'1YuodKUqBDehzsKK3iFk0GNLHf2vEmZw9', electrical:'1v4ZHV40KiQPs2DwP52mAWTQ3o4Yju2Os', procedures:'1HNFXp1e8SFM-b1K809a5RL8c-oTGj3mv'},
-      'Oven':         {documentation:'1y5xdJ5qqnYrcHieec6_5oaID2EuZ9n1f', works:'1vmb4uS7fsUy8dmcvFGDQAfcTVVyO0kTj', electrical:'1gnZxD4TedfURVOD3mOBRNA3MRTqyrO-s', procedures:'1u30duEKrD3ZMYey62Jy_qFI99D8T9Agx'},
-      'Fermentation': {documentation:'15coru1xjzm8apuySDx0Rkf1Yihwkiny8', works:'1qo4xBLzKMWuQivKdP_ae1d-sLrhIUFuj', electrical:'1Hm7sc0le89MaGoyGT9xUHGu8EUxPRXlZ', procedures:'1iFxs_EDCTJPXEcOYFBqdVaK2l-tHCwKa'},
-      'Proover':      {documentation:'1is9dH0PYJztEGdLvrQvGTPmNChy2YUZR', works:'1d3WMB-UponsZlvrTCLe4X9SSfdwELI2o', electrical:'1OPg5oxNYMsVw22ClRQpVGrmdv_sFHcsd', procedures:'1y-XxNHUbSepwnYZ2JTf6tKSnfsc8zZWz'},
-      'Freezer':      {documentation:'1fEougP82KxPmNTgXKZk5-MgVz9GbvUl4', works:'1tm3d974D4pAXgBgw7FeGB6rm1oSGP1_I', electrical:'1aLRFUMsUvLen7MKaiPCUZ7xn5OpBvguP', procedures:'10U-eNWpipgLvxbm8Gn33IQOnuOLqA8Fg'},
-      'Cooler':       {documentation:'1DytWdFirwApX6iLUMFG_jDSQvAkTWqEw', works:'1kSI1l5bxugVx9n1Atla22cLHicEOu2D8', electrical:'1pLqnD3W0Ku1pPMQbTa5vzKyi4HKvzKKo', procedures:'1-AY6xw5axJ6MGA0RClSTejpfraXTTd63'}
+      'Fritsch':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
+      'Mixing':       {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
+      'Oven':         {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
+      'Fermentation': {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
+      'Proover':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
+      'Freezer':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
+      'Cooler':       {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'}
+    },
+    'Bakery 2': { /* …popuni svojim ID-ovima… */ },
+    'Bakery 3': { /* …popuni svojim ID-ovima… */ },
+    'Other': {
+      'General': { documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS' } // nema works/electrical
+    }
+  };
+
+  /* Work History → Sheet mapping; ako nema → fallback na Drive listing */
+  const WORKS_SHEETS = {
+    'Bakery 1': {
+      'Fritsch':      {sheetId:'SHEET_ID', sheetName:'Work Histories', gid:'123456'},
+      'Mixing':       {sheetId:'SHEET_ID', sheetName:'Work Histories', gid:'123456'},
+      // …
     },
     'Bakery 2': {
-      'Mixing':       {documentation:'1zudP8sLtYeXdPDUiTQX8ncJEiFNi5PGp', works:'1h4VdDBSbGRiwkorV8KfSy9NeYF3Aq0fr', electrical:'1PchyAchzNw5bdLjAGyK0xsZ253WteLxU', procedures:'1O1cUvvOyqmFYZM8tGW1vRDu76EaK1C6-'},
-      'Fermentation': {documentation:'1BAUGAc52IPeHnR5f4raZ523ulPejyi9R', works:'1cLviY22iu7dFzpOiGNDf96ejXkl0dpCk', electrical:'1JIAqmNUPuQiDwgbLxlXCPPwHzCuP3788', procedures:'1fkvMcqu8koQJ4qJtL4_Sv1-_7wY69Ny7'},
-      'Spiro':        {documentation:'10JnBXfbcYIGfeiquWzFzSguphIOq3pUf', works:'1mzpcxhHOxvr0WPY2wmq-hlcwGGyTHHyH', electrical:'1QTNlFpETS4VlmWJo3fsi3nNXe4A9Wnf9', procedures:'10gE02-AkbNf5PqxSfX_L_CJ1-kwgBTl8'},
-      'Scarifier':    {documentation:'1Lc7zAzGJdsZRHYu6zJotw3UWqOxnSauJ'.replace('5',''), works:'1Xwhy2UH3pOUlfRypjqpVK5X1-icv2mR6', electrical:'1HHYmBtNllKX5shoVMJtiIqYonIMlc8g_', procedures:'1JXB_iQsJa8QveOVKDZKbML-jDPNnVMdB'},
-      'Retarder':     {documentation:'1PyKR_lK7Ts9AfxwVNHgzCka7SgnCBAYX', works:'1oQC9jLCFmLtUVMwTanNnD50_juZm-H6t', electrical:'1V_iHswv8gWFEPZA4tEjoPic54fcJ4bCi', procedures:'1s3O6P1LPYRUblYSECrGPkGUFiIqzDAPP'},
-      'Rademaker':    {documentation:'1fW0ZDXRKGDV83xDw3sEJvWV9ukTvBkmC', works:'1mOX5mGPjxwEy5incajN42hPNYr7DQgK6', electrical:'1WY6walad34lCcnXlDS_YHc1nfGeHQa0n', procedures:'1PcGT1N-TGPBcTkDVU5ElLEmIwJnAkvaS'},
-      'Proover':      {documentation:'18FQjqiPEdoWccfcWj1QacgXTjG5eR0ye', works:'1M6tHWqPQmo8dbo1A-KKa3O9i9E6c0SvU', electrical:'1xKPYZEGfojToDwrRiluD96sCH6j0UpD1', procedures:'1iVp3SOPCdW19tdfl1sunwac7RpwwlcQF'},
-      'Pattyn Tilting Conveyer':{documentation:'10s3jPwp6dROLtu1VtXxy6s90ekclFKeL', works:'1lRj5oUVMFNzm4dmAiK_Hs-dTXcNrLPDL', electrical:'1JRztMfGW-mK2Q2aaanLOeO_M6dUB6Co-', procedures:'1vaoFOUtk3GwbiOcoZGwisU2lXS3JWDr1'},
-      'Packing':      {documentation:'1b7lejvDhl3t-QtXXtcwYQrfinb1A3d37', works:'14DaubNbxDI4kHkY1lybR5aO8BDY5FXkz', electrical:'1XT0X0llTt_MC0f-1YGik426rTD8Iv8Wa', procedures:'1g8hL-uQkGgGeeBHgoL_bqNcLigN8aSj8'},
-      'Oven':         {documentation:'1B7FTUY4FPyBS1t8pqQ5GqDtemgpYQ74z', works:'1wR6ZkTK97KY-M8Maf-b9-2GbigdcNU0Y', electrical:'1pWjIvbrHLRxtA3POj8paD8tche25aQXx', procedures:'1oncf1Y_zHY4mYywLvEjs7S8gZpbKVlCe'},
-      'MIB':          {documentation:'1U7vrSwXzraP5k2qXetBknw1sMUwEyaJ7', works:'1KHJD6Ym4gcV6Lj5yGMUJM7tIuOz11eYu', electrical:'13reFyzrc9hqbnINlS9mszlGAnuTRPr1C', procedures:'1CVlhpzWsvQ4jnJL77Cy64FC-jRILkHLs'},
-      'Freezer':      {documentation:'1FFyFlKJEI4hfrxQmuKPQlDkOz72YCT5C', works:'1n52QVId2cUAG-LBUueWEoGyPZTOYb2SD', electrical:'1xqcwh5GvmZgSkCyffzQNINw4P_91W4Df', procedures:'1X14Fgcb8rESKIGQNXVo1bVT9cYn_f4s6'},
-      'Cooler':       {documentation:'1R76AuyOoR-s0Bg9XmR3rYvvQN6oKm9Po', works:'16zlYojFfOTrSFgd7th5qPrJPJ5ceM2-z', electrical:'1SFVbg_a2mcStLcTzZ2i8F-skeZ6F1Hvq', procedures:'15lIE4UUaIBiXXTEz_zPHGo9ciCI0H2lT'},
-      'Baggers':      {documentation:'1HzHV6G7HZFJ-kjC8xsXp5HyO-YXd5MaU', works:'1jB5B1NEEhkDmUjhoJeMJ476I6hgU6OtK', electrical:'17TFo6H4iR3LniJ-hDIA_7U8KhgGeatKh', procedures:'1igbb3Co4Fgv8ZWySAwGt34BD8qLXAlv3'},
-      'AHU':          {documentation:'1HhUMMmTdLqLssVd0n8ELraF7vHEypERT', works:'1IONOZH5Oh20bRQiOKFdrBACjnmECXF6d', electrical:'1Qx3Izd-STjJ34HO4qoUW-va6g_62yCow', procedures:'1N_94znXfxOeYlChDRUWo2O7NCRCAFYYI'}
+      // …
     },
     'Bakery 3': {
-      'Site 1 Packing': {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace('d','')},
-      'Site 2 Packing': {documentation:'17DXdFMXZBpf9mtZ4c5ZrGsSZTbfkBYft', works:'1_GcauA20-3UKzkFYpLgM9aEcZu6ZL3Q7', electrical:'1LXWzf4qDRATSiXnfgy1gguOyR5qOYISY', procedures:'1iUSiN9lkyd-Cfl2eWtgfeOX8U42dE4fQ'},
-      'Paletiser':      {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace(' ','')},
-      'Retail':         {documentation:'1wVv6BzVnpgv7PDw7rPmSqFUCfp2RVo8d', works:'1_HXYuj17giRiwPIWE_AJqwYCOgCpAMBv', electrical:'1rvYAmcDNc-sKCnZlyQRXnqC3ujkhLiXl', procedures:'1BG_ajXL8jdBiwOGYoUncJazdOUnoWZS6'}
-    },
-    'Other': {
-      'General':       {documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS'}
+      // …
     }
   };
 
@@ -172,42 +175,11 @@
     procedures:    { title:'Procedures',      color:'c4', desc:'SOPs & guides' }
   };
 
-  const WORKS_SHEETS = {
-    'Bakery 1': {
-      'Fritsch': {sheetId: '1Zbw2tdWHwtmGPmEbPB-zwCISkaU0uE9V', sheetName: 'Work Histories', gid: '376639293'},
-      'Mixing': { sheetId: '1sqLOozThUlEjMzonVPbdaScnSlCq36xP', sheetName: 'Work Histories', gid: '598593226' },
-      'Cooler': { sheetId: '1sqLOozThUlEjMzonVPbdaScnSlCq36xP', sheetName: 'Work Histories', gid: '598593226'},
-      'Freezer': {sheetId: '1XPuNPqiJOrGaiTkvZqPUKjo4t-ArcxrC', sheetName: 'Work Histories', gid: '1982828363'},
-      'Fermentation':{sheetID: '1-fqWwxyiBh2Bg2vURBYhvtN6hNeyub0a', sheetName:'Work Histories', gid: '240637548'},
-      'Oven' :{ sheetId: '1lv_wj7vUF0CPEDlG_AJy6pr07I_UgueB', sheetName:'Work Histories', gid: '1201491591'},
-      'Proover':{ sheetId: '1qcZkic09W3IVQIrciOPu8F3u3aRuAret', sheetName: 'Work Histories', gid: '629516588'},          
-    },
-    'Bakery 2': {
-      'AHU' : {sheetId: '1Bav0okr_EOD_BUcYdTyg4ZLbtPXg0c6r', sheetName: 'Work Histories', gid: '1465343950'},
-      'Baggers': {sheetId: '1TDd3HN4VCdaIMVqrEqKSpP-hOIB1qF5G', sheetName: 'Work Histories', gid: '1866850271'},
-      'Cooler': {sheetId: '1UH2bXg2xNxeaLwBrgoJB0bLkHBrPw_G_', sheetName: 'Work Histories', gid: '590925651'},
-      'Fermentation' :{sheetId: '1KtRYBhlDtBiMfNoXZbH15RWEaXBPanB1', sheetName: 'Work Histories', gid: '1773358127'},
-      'Freezer' :{sheetId: '142g28ImYvkIISMY3tIxx9-HAc2HTsu4P', sheetName: 'Work Histories', gid: '1108561148'},
-      'Mixing' :{sheetId: '1cKkULO4w0NMgOm8xCWcJpgi2fnAEEAKf', sheetName: 'Work Histories', gid: '1291120270'},
-      'Oven' :{sheetId: '1ji5vmcbBJcOKlYg3lQ1tPAj-sDB-h_pF', sheetName: 'Work Histories', gid:'542344704'},
-      'Proover' :{sheetId: '1nSY7rnpL5jPbnwBkWflITI357lGYRJgJ', sheetName: 'Work Histories', gid: '580369016'},
-      'Rademaker' :{sheetId:'1SP_P1cBAmdS8JnCwXq2L8qH26SvFVJpB', sheetName: 'Work Histories', gid: '176625201'},
-      'Retarder' :{sheetId: '1qZQKz77AHlAonryimU-pUokwgFTReden', sheetName: 'Work Histories', gid: '1302414895'},
-      'Scarifier' :{sheetId: '1jmi0teTEGZBlvvu2L5aIg_GFcL6Xzq96', sheetName: 'Work Histories', gid:'525823593'},
-      'Spiro' :{sheetId: '1-t2YrC3Wwox1jpOcZo0Xxzs6NKdUALZK', sheetName: 'Work Histories', gid:'620703835'},  
-    },
-    'Bakery 3': {
-      'Site 2 Packing' :{sheetId: '19C1b-GwMOWAPFhqUx0lzwyuIbb9HkK81', sheetName: 'Work Histories', gid:'1461447237'},
-      'Site 1 Packing' :{sheetId: '1dqNSJjcg5YHry0P44y36IfUPt17776dZ', sheetName: 'Work Histories', gid:'1827174219'},
-      'Paletiser' :{sheetId: '1YYy_q1z1VTjvP8qAOlhitF17Q1GeOJpq', sheetName: 'Work Histories', gid:'1730089513'},
-      'Retail' :{sheetId: '1avLAoAiyHtCNOyYkUffT7iCWQ_N54yk2', sheetName: 'Work Histories', gid:'1258265858'},
-    }
-  };
-
   /* ===== Utils ===== */
   function params(){ return new URLSearchParams(location.search); }
   function go(obj){ const u=new URL(location.href); u.search=new URLSearchParams(obj).toString(); history.pushState({},'',u); draw(); }
   window.addEventListener('popstate', draw);
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 
   function crumbsSet(items){
     const el = document.getElementById('crumbs');
@@ -226,28 +198,19 @@
   }
 
   /* ===== Roles / PIN ===== */
-  const ROLE_PINS = { '1111':'operator', '2906':'engineer', '1782':'admin' };
+  const ROLE_PINS = { '1111':'operator', '2906':'engineer', '1782':'admin' }; // operator nema Work History
   function getRole(){ return sessionStorage.getItem('role') || 'operator'; }
   function isOperator(){ return getRole()==='operator'; }
   function isEngineer(){ return getRole()==='engineer'; }
   function isAdmin(){ return getRole()==='admin'; }
 
-  // operator global allow-list (fileId niz u localStorage)
-  const OP_ALLOW_KEY = 'operatorAllowList';
-  function getOpAllowSet(){ try{ return new Set(JSON.parse(localStorage.getItem(OP_ALLOW_KEY)||'[]')); }catch{ return new Set(); } }
-  function setOpAllow(fileId, allow){
-    const s = getOpAllowSet(); if(allow) s.add(fileId); else s.delete(fileId);
-    localStorage.setItem(OP_ALLOW_KEY, JSON.stringify([...s]));
-  }
-
-  /* ===== Header role badge + logout ===== */
   const roleBadge = document.getElementById('roleBadge');
   const logoutBtn = document.getElementById('logoutBtn');
   function refreshHeaderAuth(){
     const role = getRole();
     if (sessionStorage.getItem('unlocked')==='1'){
       roleBadge.style.display = '';
-      roleBadge.textContent = `${role}`;
+      roleBadge.textContent = role.charAt(0).toUpperCase()+role.slice(1);
       logoutBtn.style.display = '';
     } else {
       roleBadge.style.display = 'none';
@@ -257,80 +220,47 @@
   logoutBtn?.addEventListener('click', ()=>{
     sessionStorage.removeItem('unlocked');
     sessionStorage.removeItem('role');
-    location.href = location.pathname; // reset state
+    location.href = location.pathname;
   });
 
-  /* ===== Home / Bakery / Machine Views ===== */
-  function drawHome(){
-    crumbsSet([{label:'Home'}]);
-    const view=document.getElementById('view'); view.innerHTML='';
-    const wrap=document.createElement('div'); wrap.className='stack';
-
-    Object.keys(MACHINES).forEach(b=>{
-      if (isOperator() && b==='Other') return; // operator ne vidi Other
-      const a=document.createElement('a');
-      a.className='tile';
-      a.href=`?bakery=${encodeURIComponent(b)}`;
-      a.innerHTML=`<h2>${b}</h2><p>Open</p>`;
-      wrap.appendChild(a);
-    });
-    view.appendChild(wrap);
+  // Operator allow-list (global, za Documentation & Procedures)
+  const OP_ALLOW_KEY = 'operatorAllowList';
+  function getOpAllowSet(){ try{ return new Set(JSON.parse(localStorage.getItem(OP_ALLOW_KEY)||'[]')); }catch{ return new Set(); } }
+  function setOpAllow(fileId, allow){
+    const s = getOpAllowSet(); if(allow) s.add(fileId); else s.delete(fileId);
+    localStorage.setItem(OP_ALLOW_KEY, JSON.stringify([...s]));
   }
 
-  function drawBakery(b){
-    if (isOperator() && b==='Other'){ go({}); return; } // operator blokiran
-    crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}}]);
-    const view=document.getElementById('view'); view.innerHTML='';
-    const machines = MACHINES[b]||[];
-    if(!machines.length){ drawMachine(b,'—'); return; }
-    const wrap=document.createElement('div'); wrap.className='stack';
-    machines.forEach(m=>{
-      const a=document.createElement('a');
-      a.className='tile';
-      a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}`;
-      a.innerHTML=`<h2>${m}</h2><p>Open</p>`;
-      wrap.appendChild(a);
-    });
-    view.appendChild(wrap);
+  /* ===== Google Drive/Auth ===== */
+  let accessToken=null,gapiReady=false;
+  async function ensureGapi(){
+    if(gapiReady) return;
+    await new Promise(r=>gapi.load('client',r));
+    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
+    gapiReady=true;
   }
-
-  function drawMachine(b,m){
-    if (isOperator() && b==='Other'){ go({}); return; } // operator blokiran i na deep link
-
-    crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}}]);
-    const view=document.getElementById('view'); view.innerHTML='';
-    const card=document.createElement('div'); card.className='card';
-    const h=document.createElement('h3'); h.textContent=`${b} › ${m}`; card.appendChild(h);
-    const grid=document.createElement('div'); grid.className='grid';
-
-    const isOther = (b==='Other');
-
-    if (isOther){
-      // U Other uvijek samo Documentation + Procedures
-      ['documentation','procedures'].forEach(k=>{
-        const meta=CATS[k];
-        const a=document.createElement('a');
-        a.className=`tile square ${meta.color}`;
-        a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
-        a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
-        grid.appendChild(a);
+  async function ensureAuth(){
+    if(!isAdmin()) throw new Error('Only admin can sign in.');
+    if(accessToken) return accessToken;
+    await ensureGapi();
+    return new Promise((res,rej)=>{
+      const c=google.accounts.oauth2.initTokenClient({
+        client_id:CLIENT_ID, scope:SCOPES,
+        callback:r=>{ if(r&&r.access_token){accessToken=r.access_token;res(accessToken);} else rej(new Error('No token')); }
       });
-    } else {
-      Object.entries(CATS).forEach(([k,meta])=>{
-        if (isOperator() && k!=='documentation' && k!=='procedures') return; // operator samo doc + proc
-        const a=document.createElement('a');
-        a.className=`tile square ${meta.color}`;
-        a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
-        a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
-        grid.appendChild(a);
-      });
-    }
+      c.requestAccessToken({prompt:'consent'});
+    });
+  }
+  function isAdminSignedIn(){ return !!accessToken; }
+  function publicDownloadUrl(fileId){ return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`; }
 
-    card.appendChild(grid);
-    view.appendChild(card);
+  async function fetchPrivateBlob(fileId){
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers:{'Authorization':'Bearer '+accessToken} });
+    if(!r.ok) throw new Error('Fetch failed '+r.status);
+    return await r.blob();
   }
 
-  /* === Preview helpers === */
+  /* ===== Preview helpers ===== */
   const previewBackdrop = document.getElementById('previewBackdrop');
   const previewFrame   = document.getElementById('previewFrame');
   const previewVideo   = document.getElementById('previewVideo');
@@ -354,36 +284,7 @@
 
   function isPdf(mime){ return (mime||'').toLowerCase().includes('pdf') || /\.pdf$/i.test(mime||''); }
   function isImage(mime,name){ return (mime||'').startsWith('image/') || /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name||''); }
-  function isVideo(mime,name){ return (mime||'').startsWith('video/') || /\.(mp4|mov|mkv|webm|avi)$/i.test(name||''); }
-  function publicDownloadUrl(fileId){ return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`; }
-
-  let accessToken=null,gapiReady=false;
-  async function ensureGapi(){
-    if(gapiReady) return;
-    await new Promise(r=>gapi.load('client',r));
-    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
-    gapiReady=true;
-  }
-  async function ensureAuth(){
-    if(!isAdmin()) throw new Error('Only admin can sign in.');
-    if(accessToken) return accessToken;
-    await ensureGapi();
-    return new Promise((res,rej)=>{
-      const c=google.accounts.oauth2.initTokenClient({
-        client_id:CLIENT_ID, scope:SCOPES,
-        callback:r=>{ if(r&&r.access_token){accessToken=r.access_token;res(accessToken);} else rej(new Error('No token')); }
-      });
-      c.requestAccessToken({prompt:'consent'});
-    });
-  }
-  function isAdminSignedIn(){ return !!accessToken; }
-  function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
-
-  async function fetchPrivateBlob(fileId){
-    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers:{'Authorization':'Bearer '+accessToken} });
-    if(!r.ok) throw new Error('Fetch failed '+r.status);
-    return await r.blob();
-  }
+  function isVideo(mime,name){ return (mime||'').startsWith('video/') || /\.(mp4|mov|mkv|webm|avi)$/i.test(mime||''); }
 
   async function openInlinePreview(f,isAdminMode){
     try{
@@ -404,7 +305,8 @@
             previewVideo.src = publicDownloadUrl(f.id);
           }
           previewFrame.style.display='none';
-          previewVideo.style.display='block'; showPreview(); return;
+          previewVideo.style.display='block';
+          showPreview(); return;
         }catch(e){ console.warn('Video inline failed, fallback to Drive preview'); }
       }
 
@@ -424,7 +326,7 @@
     }catch(e){ alert('Preview failed: '+(e.message||String(e))); }
   }
 
-  /* ===== Sheets helpers (omitted: unchanged parsing functions) ===== */
+  /* ===== Sheets helpers (GViz JSON → fallback CSV) ===== */
   function parseCsvTable(text){
     const rows = []; let row = [], inQuotes = false, field = '';
     for (let i=0; i<text.length; i++){
@@ -471,9 +373,63 @@
     const base=`${dd}.${mm}.${yyyy}`; return (hh+mi+ss)!==0 ? `${base} ${String(hh).padStart(2,'0')}:${String(mi).padStart(2,'0')}` : base;
   }
 
-  /* ===== Work History renderer (unchanged core, admin-only controls gated) ===== */
+  async function fetchSheetTable(sheetId, sheetName, gid){
+    if (sheetName) {
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('GViz JSON HTTP ' + res.status);
+        let text = await res.text();
+        text = text.replace(/^\)\]\}'\s*/, '').replace(/^\uFEFF/, '');
+        const start = text.indexOf('{'), end = text.lastIndexOf('}');
+        if (start === -1 || end === -1 || end <= start) throw new Error('Invalid GViz JSON payload');
+        const data = JSON.parse(text.substring(start, end + 1));
+
+        const cols=(data.table.cols||[]);
+        const headers = cols.map(c => (c && (c.label || c.id)) || '');
+        const types = cols.map(c => (c && c.type) || 'string').map(t => t==='date'||t==='datetime' ? 'date' : (t==='number' ? 'number' : 'text'));
+        const rows = (data.table.rows||[]).map(r => (r.c||[]).map(c => {
+          if(!c) return '';
+          if (c.f != null && c.f !== '') return c.f;
+          if (typeof c.v === 'string' && /^Date\(/.test(c.v)) return c.v;
+          return (c.v ?? '');
+        }));
+
+        const looksLikeLetters = headers.length && headers.every(h => !h || /^[A-Z]+$/.test(String(h)));
+        const allEmpty = headers.every(h => !h || String(h).trim()==='');
+        let hdrs=headers, rws=rows, tys=types;
+        if ((allEmpty || looksLikeLetters) && rows.length){ hdrs = rows[0].map(v => String(v||'').trim()); rws = rows.slice(1); }
+        return { headers: hdrs, rows: rws, types: tys };
+      } catch (e) {
+        try {
+          const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+          const rCsv = await fetch(csvUrl);
+          if (!rCsv.ok) throw new Error('GViz CSV HTTP ' + rCsv.status);
+          return parseCsvTable(await rCsv.text());
+        } catch (e2) {
+          if (gid) {
+            const urlCsv = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&id=${sheetId}&gid=${gid}`;
+            const rCsv2 = await fetch(urlCsv);
+            if (!rCsv2.ok) throw new Error('CSV export HTTP ' + rCsv2.status);
+            return parseCsvTable(await rCsv2.text());
+          }
+          throw e2;
+        }
+      }
+    }
+    if (gid) {
+      const urlCsv = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&id=${sheetId}&gid=${gid}`;
+      const rCsv = await fetch(urlCsv);
+      if (!rCsv.ok) throw new Error('CSV export HTTP ' + rCsv.status);
+      return parseCsvTable(await rCsv.text());
+    }
+    throw new Error('No sheetName or gid configured.');
+  }
+
+  /* ===== Work History table renderer ===== */
   function renderWorksTable(container, table, sheetId){
     container.innerHTML = '';
+
     const bar = document.createElement('div'); bar.className='toolbar';
     const search = document.createElement('input'); search.type='search'; search.placeholder='Search…';
     const adminBtns = document.createElement('div'); adminBtns.style.display='flex'; adminBtns.style.gap='8px'; adminBtns.style.marginLeft='auto';
@@ -484,7 +440,8 @@
     bar.append(search, adminBtns);
     container.appendChild(bar);
 
-    const topScroll = document.createElement('div'); topScroll.className = 'scroll-x-top';
+    const topScroll = document.createElement('div');
+    topScroll.className = 'scroll-x-top';
     const topInner = document.createElement('div'); topInner.style.height = '1px';
     topScroll.appendChild(topInner); container.appendChild(topScroll);
 
@@ -493,8 +450,9 @@
     wrap.appendChild(tableEl); container.appendChild(wrap);
 
     const thead = document.createElement('thead'); const trh = document.createElement('tr');
+
     const wideIdx = new Set(); let assetCol = -1;
-    table.headers.forEach((h,i)=>{ if(/job\s*description/i.test(h)) wideIdx.add(i); if(/action\s*taken/i.test(h)) wideIdx.add(i); if (/(^|\b)asset(\b|$)/i.test(h||'')) { assetCol = i; wideIdx.add(i);} });
+    table.headers.forEach((h,i)=>{ if(/job\s*description/i.test(h)) wideIdx.add(i); if(/action\s*taken/i.test(h)) wideIdx.add(i); if (/(^|\b)asset(\b|$)/i.test(h||'')) { assetCol = i; wideIdx.add(i); } });
 
     table.headers.forEach((h, idx) => {
       const th = document.createElement('th');
@@ -504,33 +462,43 @@
       th.addEventListener('click', () => sortBy(idx));
       trh.appendChild(th);
     });
-    thead.appendChild(trh); tableEl.appendChild(thead);
+    thead.appendChild(trh);
+    tableEl.appendChild(thead);
 
-    const tbody = document.createElement('tbody'); tableEl.appendChild(tbody);
+    const tbody = document.createElement('tbody');
+    tableEl.appendChild(tbody);
 
     let currentRows = table.rows.slice();
+
     const inferredTypes = (table.types && table.types.length===table.headers.length)
       ? table.types.slice()
       : table.headers.map((_, col) => {
           let isDate=true, isNum=true;
           for (let i=0;i<Math.min(currentRows.length, 50);i++){
-            const v = currentRows[i][col]; if (v==null || v==='') continue;
-            const n = Number(v); if (!isFinite(n)) isNum=false;
-            const d = parseDateSmart(v); if (isNaN(d)) isDate=false;
+            const v = currentRows[i][col];
+            if (v==null || v==='') continue;
+            const n = Number(v);
+            if (!isFinite(n)) isNum=false;
+            const d = parseDateSmart(v);
+            if (isNaN(d)) isDate=false;
             if (!isDate && !isNum) break;
           }
           return isDate ? 'date' : (isNum ? 'number' : 'text');
         });
 
     function pickBestDateColumn(){
-      const byName = table.headers.findIndex(h => h && /^(completed\s*on|completed|completion\s*date|date\s*completed|date\/time|date|datum)$/i.test(String(h).trim()));
+      const byName = table.headers.findIndex(h =>
+        h && /^(completed\s*on|completed|completion\s*date|date\s*completed|date\/time|date|datum)$/i.test(String(h).trim())
+      );
       if (byName !== -1) return byName;
       let bestCol = -1, bestCount = 0;
       for (let c=0; c<table.headers.length; c++){
         let cnt = 0;
         for (let i=0; i<Math.min(currentRows.length, 200); i++){
-          const v = currentRows[i]?.[c]; if (v==null || v==='') continue;
-          if (!isNaN(parseDateSmart(v))) cnt++;
+          const v = currentRows[i]?.[c];
+          if (v==null || v==='') continue;
+          const d = parseDateSmart(v);
+          if (!isNaN(d)) cnt++;
         }
         if (cnt > bestCount){ bestCount = cnt; bestCol = c; }
       }
@@ -538,49 +506,114 @@
     }
 
     let sortCol = -1, sortDir = 1;
+
     function cmp(a,b,col){
-      const t = inferredTypes[col]; const va=a[col], vb=b[col];
-      if (t==='date'){ const na=parseDateSmart(va), nb=parseDateSmart(vb); if (isNaN(na)&&isNaN(nb)) return 0; if (isNaN(na)) return 1; if (isNaN(nb)) return -1; return na-nb; }
-      if (t==='number'){ const na=Number(va), nb=Number(vb); if (isNaN(na)&&isNaN(nb)) return 0; if (isNaN(na)) return 1; if (isNaN(nb)) return -1; return na-nb; }
-      const sa=String(va||'').toLowerCase(), sb=String(vb||'').toLowerCase(); return sa<sb?-1:sa>sb?1:0;
+      const t = inferredTypes[col];
+      const va = a[col], vb = b[col];
+      if (t==='date'){
+        const na = parseDateSmart(va);
+        const nb = parseDateSmart(vb);
+        if (isNaN(na) && isNaN(nb)) return 0;
+        if (isNaN(na)) return 1;
+        if (isNaN(nb)) return -1;
+        return na - nb;
+      } else if (t==='number'){
+        const na = Number(va); const nb = Number(vb);
+        if (isNaN(na) && isNaN(nb)) return 0;
+        if (isNaN(na)) return 1;
+        if (isNaN(nb)) return -1;
+        return na - nb;
+      } else {
+        const sa = String(va||'').toLowerCase();
+        const sb = String(vb||'').toLowerCase();
+        if (sa<sb) return -1;
+        if (sa>sb) return 1;
+        return 0;
+      }
     }
+
     function updateSortIndicators(){
       const ths = thead.querySelectorAll('th .sort');
-      ths.forEach((el, i)=>{ el.textContent = (i===sortCol) ? (sortDir===1 ? '↑' : '↓') : '⇅'; el.style.opacity = (i===sortCol) ? '1' : '.7'; });
+      ths.forEach((el, i)=>{
+        el.textContent = (i===sortCol) ? (sortDir===1 ? '↑' : '↓') : '⇅';
+        el.style.opacity = (i===sortCol) ? '1' : '.7';
+      });
     }
-    function displayValue(v, i){ if (inferredTypes[i]==='date') return formatDateCell(v); if (inferredTypes[i]==='number') return String(v); return String(v ?? ''); }
+
+    function displayValue(v, i){
+      if (inferredTypes[i]==='date') return formatDateCell(v);
+      if (inferredTypes[i]==='number') return String(v);
+      return String(v ?? '');
+    }
+
+    const topInnerWidthSync = ()=> topInner.style.width = tableEl.scrollWidth + 'px';
+    const syncFromTop   = ()=> wrap.scrollLeft = topScroll.scrollLeft;
+    const syncFromBottom= ()=> topScroll.scrollLeft = wrap.scrollLeft;
+    topScroll.addEventListener('scroll', syncFromTop, {passive:true});
+    wrap.addEventListener('scroll', syncFromBottom, {passive:true});
+    window.addEventListener('resize', ()=>requestAnimationFrame(topInnerWidthSync));
 
     function renderBody(){
       const q = (search.value||'').toLowerCase();
       tbody.innerHTML = '';
       currentRows.forEach(r => {
-        if(q){ const hit = r.some(v => String(v||'').toLowerCase().includes(q)); if(!hit) return; }
+        if(q){
+          const hit = r.some(v => String(v||'').toLowerCase().includes(q));
+          if(!hit) return;
+        }
         const tr = document.createElement('tr');
-        r.forEach((v, i)=>{ const td=document.createElement('td'); const val=displayValue(v,i); if (inferredTypes[i]==='number') td.classList.add('cell-mono'); td.textContent=val; tr.appendChild(td); });
+        r.forEach((v, i)=>{
+          const td = document.createElement('td');
+          const val = displayValue(v, i);
+          if (inferredTypes[i]==='number') td.classList.add('cell-mono');
+          if (i===assetCol) td.classList.add('asset');
+          if (wideIdx.has(i)) td.classList.add('wide');
+          td.textContent = val;
+          tr.appendChild(td);
+        });
         tbody.appendChild(tr);
       });
+      requestAnimationFrame(topInnerWidthSync);
     }
 
     function sortBy(colIdx){
       if(sortCol === colIdx){ sortDir *= -1; } else { sortCol = colIdx; sortDir = 1; }
       currentRows.sort((a,b)=> sortDir * cmp(a,b,colIdx) );
-      updateSortIndicators(); renderBody();
+      updateSortIndicators();
+      renderBody();
     }
 
-    let completedCol = table.headers.findIndex(h => h && /^(completed\s*on|completed|completion\s*date|date\s*completed)$/i.test(String(h).trim()));
+    let completedCol = table.headers.findIndex(h =>
+      h && /^(completed\s*on|completed|completion\s*date|date\s*completed)$/i.test(String(h).trim())
+    );
     if (completedCol === -1) completedCol = pickBestDateColumn();
-    if (completedCol !== -1){ sortCol = completedCol; sortDir = 1; currentRows.sort((a,b)=> sortDir * cmp(a,b,completedCol) ); }
-    updateSortIndicators(); renderBody();
+    if (completedCol !== -1){
+      sortCol = completedCol;
+      sortDir = 1;
+      currentRows.sort((a,b)=> sortDir * cmp(a,b,completedCol) );
+    }
+
+    updateSortIndicators();
+    renderBody();
 
     search.addEventListener('input', renderBody);
+
     dlBtn.onclick = ()=>{
       const esc =(s)=>('"'+String(s??'').replace(/"/g,'""')+'"');
       const lines = [ table.headers.map(esc).join(','), ...currentRows.map(row=>row.map(esc).join(',')) ].join('\r\n');
-      const blob = new Blob([lines], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+      const blob = new Blob([lines], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download='work_history.csv'; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url), 5000);
     };
-    openGs.onclick = async ()=>{ try{ await ensureAuth(); if (sheetId) window.open(`https://docs.google.com/spreadsheets/d/${sheetId}/edit`, '_blank'); else alert('Sheet ID not found'); }catch(e){ alert('Admin sign-in failed: ' + (e.message || String(e))); } };
+    openGs.onclick = async ()=>{
+      try{
+        await ensureAuth(); // admin only
+        if (sheetId) window.open(`https://docs.google.com/spreadsheets/d/${sheetId}/edit`, '_blank');
+        else alert('Sheet ID not found');
+      }catch(e){ alert('Admin sign-in failed: ' + (e.message || String(e))); }
+    };
+
     setInterval(()=>{ adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; }, 800);
   }
 
@@ -588,7 +621,7 @@
     const entry = WORKS_SHEETS?.[bakery]?.[machine];
     if(!entry || !entry.sheetId){
       container.innerHTML = '<div class="small">No Google Sheet configured for this machine. Showing Drive folder instead.</div>';
-      return null;
+      return null; // caller će onda nacrtati Drive listing (fallback)
     }
     try{
       container.innerHTML = '<div class="small">Loading Work History…</div>';
@@ -601,13 +634,86 @@
     }
   }
 
-  /* ===== Category View ===== */
+  /* ===== Views ===== */
+  function drawHome(){
+    crumbsSet([{label:'Home'}]);
+    const view=document.getElementById('view'); view.innerHTML='';
+    const wrap=document.createElement('div'); wrap.className='stack';
+
+    ['Bakery 1','Bakery 2','Bakery 3','Other'].forEach(b=>{
+      if (isOperator() && b==='Other') return; // operator ne vidi Other sekciju
+      const a=document.createElement('a');
+      a.className='tile';
+      a.href=`?bakery=${encodeURIComponent(b)}`;
+      a.innerHTML=`<h2>${b}</h2><p>Open</p>`;
+      wrap.appendChild(a);
+    });
+    view.appendChild(wrap);
+  }
+
+  function drawBakery(b){
+    if (isOperator() && b==='Other'){ go({}); return; } // operator blokiran
+    crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}}]);
+    const view=document.getElementById('view'); view.innerHTML='';
+    const machines = MACHINES[b]||[];
+    if(!machines.length){ drawMachine(b,'—'); return; }
+    const wrap=document.createElement('div'); wrap.className='stack';
+    machines.forEach(m=>{
+      const a=document.createElement('a');
+      a.className='tile';
+      a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}`;
+      a.innerHTML=`<h2>${m}</h2><p>Open</p>`;
+      wrap.appendChild(a);
+    });
+    view.appendChild(wrap);
+  }
+
+  function drawMachine(b,m){
+    if (isOperator() && b==='Other'){ go({}); return; } // safety
+    crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}}]);
+    const view=document.getElementById('view'); view.innerHTML='';
+    const card=document.createElement('div'); card.className='card';
+    const h=document.createElement('h3'); h.textContent=`${b} › ${m}`; card.appendChild(h);
+    const grid=document.createElement('div'); grid.className='grid';
+
+    const isOtherGroup = (b==='Other');
+
+    if (isOtherGroup){
+      // U "Other" isključivo Documentation + Procedures
+      ['documentation','procedures'].forEach(k=>{
+        const meta=CATS[k];
+        const a=document.createElement('a');
+        a.className=`tile square ${meta.color}`;
+        a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
+        a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
+        grid.appendChild(a);
+      });
+    } else {
+      Object.entries(CATS).forEach(([k,meta])=>{
+        // Opcija A: operator uopće ne vidi Work History
+        if (isOperator() && (k==='works' || k==='electrical')) return;
+        const a=document.createElement('a');
+        a.className=`tile square ${meta.color}`;
+        a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
+        a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
+        grid.appendChild(a);
+      });
+    }
+
+    card.appendChild(grid);
+    view.appendChild(card);
+  }
+
+  function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
+
   function drawCategory(b,m,catKey){
     const cat=CATS[catKey]; if(!cat){ go({bakery:b,machine:m}); return; }
-    if (isOperator() && (catKey!=='documentation' && catKey!=='procedures')) { go({bakery:b,machine:m}); return; }
 
-    const isOther = (b==='Other');
-    if (isOther && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
+    // Opcija A: operator ne smije uopće vidjeti Work History ni Electrical
+    if (isOperator() && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
+
+    // "Other" nema works/electrical
+    if (b==='Other' && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
 
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}},{label:cat.title,to:{bakery:b,machine:m,cat:catKey}}]);
 
@@ -647,20 +753,29 @@
         if(!fid){ list.innerHTML='<div class="small">Set Drive folder ID.</div>'; return; }
         const params=new URLSearchParams({
           q:`'${fid}' in parents and trashed=false`,
-          fields:'files(id,name,modifiedTime,mimeType,webViewLink)', orderBy:'modifiedTime desc',
-          pageSize:'100', key:API_KEY, supportsAllDrives:'true', includeItemsFromAllDrives:'true'
+          fields:'files(id,name,modifiedTime,mimeType,webViewLink)',
+          orderBy:'modifiedTime desc', pageSize:'100', key:API_KEY,
+          supportsAllDrives:'true', includeItemsFromAllDrives:'true'
         });
         const res=await fetch('https://www.googleapis.com/drive/v3/files?'+params.toString());
         if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error?.message||('HTTP '+res.status)); }
         let items=(await res.json()).files||[];
 
-        const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
+        const s=(search.value||'').toLowerCase();
+        if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
+
         if (isOperator()){
-          if (isDocOrProc){ items = items.filter(f => allowSet.has(f.id)); if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; } }
-          else { list.innerHTML = '<div class="small">Not permitted.</div>'; return; }
+          if (isDocOrProc){
+            items = items.filter(f => allowSet.has(f.id));
+            if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; }
+          } else {
+            list.innerHTML = '<div class="small">Not permitted.</div>'; return;
+          }
         }
+
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        renderFileRows(items,false);
+
+        renderFileRows(items, false);
       }catch(e){ list.innerHTML=`<div class="small">Public list error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
 
@@ -673,7 +788,7 @@
         let items=res.result.files||[];
         const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        renderFileRows(items,true);
+        renderFileRows(items, true);
       }catch(e){ list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
 
@@ -681,12 +796,15 @@
       list.innerHTML='';
       items.forEach(f=>{
         const row=document.createElement('div'); row.className='item';
+
         const title=document.createElement('a'); title.className='title'; title.href='#';
         title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
-        const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
+        const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():''; 
         title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
+
         const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
 
+        // Admin: toggle Allow operator (samo za doc/proc)
         if (adminMode && isAdmin() && isDocOrProc){
           const lbl=document.createElement('label'); lbl.className='small'; lbl.style.display='flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
           const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = getOpAllowSet().has(f.id);
@@ -698,21 +816,25 @@
         const dl=document.createElement('a'); dl.className='icon-btn';
         dl.href = adminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
         dl.target='_blank'; dl.rel='noopener';
+        dl.title='Download';
         dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         right.appendChild(dl);
 
         if (adminMode && isAdmin()){
-          const del=document.createElement('button'); del.className='icon-btn';
+          const del=document.createElement('button'); del.className='icon-btn'; del.title='Delete';
           del.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M10 7v12m4-12v12M9 7l1-2h4l1 2M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
           del.onclick=async()=>{ if(!confirm('Delete file?')) return;
             try{ await gapi.client.drive.files.delete({fileId:f.id}); await privateListFiles(); }
             catch(e){ alert('Delete failed: '+(e.result?.error?.message||e.message)); } };
           right.appendChild(del);
         }
-        row.append(title, right); list.appendChild(row);
+
+        row.append(title, right);
+        list.appendChild(row);
       });
     }
 
+    // INIT
     publicListFiles();
     refresh.onclick = publicListFiles;
     search.oninput = publicListFiles;
@@ -728,6 +850,24 @@
           bar.append(signOut);
         }catch(e){ alert('Sign-in failed: ' + (e.message || String(e))); }
       };
+    }
+
+    // Ako je kategorija Work History i postoji Sheet mapping → nacrtaj tablicu iznad liste,
+    // a Drive listing služi kao fallback SAMO ako mapping ne postoji (po tvojoj potvrdi “Da, da”).
+    if (catKey==='works'){
+      // Ako operator nekako dođe URL-om — zaštita (opcija A)
+      if (isOperator()){ go({bakery:b,machine:m}); return; }
+
+      const sheetWrap = document.createElement('div');
+      sheetWrap.className='card';
+      sheetWrap.style.marginTop='12px';
+      sheetWrap.innerHTML = '<div class="small">Loading Work History…</div>';
+      view.insertBefore(sheetWrap, card); // prikaži tablicu iznad liste
+
+      const loaded = await drawWorksSheetView(b,m,sheetWrap);
+      if (loaded===null){
+        sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
+      }
     }
   }
 
@@ -798,33 +938,51 @@
       while(idx < FOLDER_INDEX.length){
         const i = idx++; const meta = FOLDER_INDEX[i];
 
-        // Operator pretražuje samo doc/proc i samo allowed
+        // Operator pretražuje samo Documentation/Procedures i samo allowed fileove
         if (isOperator() && !(meta.cat==='documentation' || meta.cat==='procedures')) continue;
 
         try{
           let files = isAdminSignedIn() ? await searchFolderPrivate(meta.folderId, query) : await searchFolderPublic(meta.folderId, query);
-          if (isOperator()) files = files.filter(f => allowSet.has(f.id));
+          if (isOperator()){
+            files = files.filter(f => allowSet.has(f.id));
+          }
           files.forEach(f => { appendSearchItem(list, meta, f, isAdminSignedIn()); resultsCount++; });
-        }catch(e){ /* ignore */ }
+        }catch(e){ /* ignore per-folder errors */ }
       }
     }
     await Promise.all(Array.from({length: Math.min(concurrency, FOLDER_INDEX.length)}, worker));
     if(resultsCount === 0){ list.innerHTML = '<div class="small">No results.</div>'; }
   }
 
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
-
   /* ===== Router ===== */
   function draw(){
     refreshHeaderAuth();
     const p=params(); const b=p.get('bakery'); const m=p.get('machine'); const c=p.get('cat'); const q=p.get('q');
+
     if(q){ drawSearch(q); return; }
     if(!b){ drawHome(); return; }
     if(b && !m){ drawBakery(b); return; }
     if(b && m && !c){ drawMachine(b,m); return; }
     if(b && m && c){ drawCategory(b,m,c); return; }
   }
-  window.addEventListener('load', draw);
+
+  /* ===== Startup ===== */
+  window.addEventListener('load', ()=>{
+    // inicijalni tiles (Home)
+    const stack = document.getElementById('homeStack');
+    if (stack){
+      stack.innerHTML = '';
+      ['Bakery 1','Bakery 2','Bakery 3','Other'].forEach(B=>{
+        if (isOperator() && B==='Other') return;
+        const a=document.createElement('a');
+        a.className='tile';
+        a.href='?bakery=' + encodeURIComponent(B);
+        a.innerHTML = `<h2>${B}</h2><p>Open</p>`;
+        stack.appendChild(a);
+      });
+    }
+    draw();
+  });
 
   /* ===== Global search form ===== */
   const gsForm = document.getElementById('globalSearchForm');
@@ -853,6 +1011,7 @@
     refreshHeaderAuth();
     draw();
   }
+
   function checkPin(){
     const val=(pinInput.value||'').trim();
     const role = ROLE_PINS[val];
@@ -874,10 +1033,10 @@
   pinBtn.addEventListener('click', checkPin);
   pinInput.addEventListener('keypress', e=>{ if(e.key === 'Enter') checkPin(); });
 
-  if(sessionStorage.getItem('unlocked') === '1'){ doUnlock(sessionStorage.getItem('role')||'operator'); }
+  // auto-hide lock ako je već otključano
+  if(sessionStorage.getItem('unlocked') === '1'){
+    doUnlock(sessionStorage.getItem('role')||'operator');
+  }
   </script>
 </body>
 </html>
-
-
-
