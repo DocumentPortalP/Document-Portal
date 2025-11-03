@@ -617,7 +617,7 @@
     setInterval(()=>{ adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; }, 800);
   }
 
-  async function drawWorksSheetView(bakery, machine, container){
+  function drawWorksSheetView(bakery, machine, container){
     const entry = WORKS_SHEETS?.[bakery]?.[machine];
     if(!entry || !entry.sheetId){
       container.innerHTML = '<div class="small">No Google Sheet configured for this machine. Showing Drive folder instead.</div>';
