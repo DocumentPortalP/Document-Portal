@@ -55,8 +55,7 @@
   .scroll-x-top{
     overflow-x:auto; overflow-y:hidden;
     height:14px; background:#fff;
-    border:1px solid var(--line);
-    border-bottom:0;
+    border:1px solid var(--line); border-bottom:0;
     border-radius:12px 12px 0 0;
   }
   .scroll-x-top::-webkit-scrollbar{height:12px}
@@ -118,10 +117,11 @@
   </main>
   <footer></footer>
 
-  <!-- Google Identity Services + Google API client -->
+  <!-- External SDKs -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
 
+  <!-- Main App Script -->
   <script>
   /******** CONFIG ********/
   const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
@@ -133,7 +133,7 @@
     'Bakery 1': ['Mixing','Fermentation','Fritsch','Proover','Oven','Cooler','Freezer'],
     'Bakery 2': ['Mixing','Fermentation','Spiro','Scarifier','Retarder','Rademaker','Proover','Oven','MIB','Freezer','Cooler','AHU'],
     'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail'],
-    'Other'   : ['General'] // 4. sekcija na Home; unutar nje samo Documentation + Procedures
+    'Other'   : ['General']
   };
 
   const FOLDERS = {
@@ -146,26 +146,21 @@
       'Freezer':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
       'Cooler':       {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'}
     },
-    'Bakery 2': { /* …popuni svojim ID-ovima… */ },
-    'Bakery 3': { /* …popuni svojim ID-ovima… */ },
+    'Bakery 2': { /* upiši svoje */ },
+    'Bakery 3': { /* upiši svoje */ },
     'Other': {
-      'General': { documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS' } // nema works/electrical
+      'General': { documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS' }
     }
   };
 
-  /* Work History → Sheet mapping; ako nema → fallback na Drive listing */
+  /* Work History → Google Sheet mapping */
   const WORKS_SHEETS = {
     'Bakery 1': {
-      'Fritsch':      {sheetId:'SHEET_ID', sheetName:'Work Histories', gid:'123456'},
-      'Mixing':       {sheetId:'SHEET_ID', sheetName:'Work Histories', gid:'123456'},
-      // …
+      // primjer:
+      // 'Fritsch': { sheetId:'SHEET_ID', sheetName:'Work Histories', gid:'376639293' }
     },
-    'Bakery 2': {
-      // …
-    },
-    'Bakery 3': {
-      // …
-    }
+    'Bakery 2': {},
+    'Bakery 3': {}
   };
 
   const CATS = {
@@ -198,7 +193,7 @@
   }
 
   /* ===== Roles / PIN ===== */
-  const ROLE_PINS = { '1111':'operator', '2906':'engineer', '1782':'admin' }; // operator nema Work History
+  const ROLE_PINS = { '1111':'operator', '2906':'engineer', '1782':'admin' };
   function getRole(){ return sessionStorage.getItem('role') || 'operator'; }
   function isOperator(){ return getRole()==='operator'; }
   function isEngineer(){ return getRole()==='engineer'; }
@@ -210,7 +205,7 @@
     const role = getRole();
     if (sessionStorage.getItem('unlocked')==='1'){
       roleBadge.style.display = '';
-      roleBadge.textContent = role.charAt(0).toUpperCase()+role.slice(1);
+      roleBadge.textContent = role;
       logoutBtn.style.display = '';
     } else {
       roleBadge.style.display = 'none';
@@ -284,7 +279,7 @@
 
   function isPdf(mime){ return (mime||'').toLowerCase().includes('pdf') || /\.pdf$/i.test(mime||''); }
   function isImage(mime,name){ return (mime||'').startsWith('image/') || /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name||''); }
-  function isVideo(mime,name){ return (mime||'').startsWith('video/') || /\.(mp4|mov|mkv|webm|avi)$/i.test(mime||''); }
+  function isVideo(mime,name){ return (mime||'').startsWith('video/') || /\.(mp4|mov|mkv|webm|avi)$/i.test(name||''); }
 
   async function openInlinePreview(f,isAdminMode){
     try{
@@ -326,7 +321,7 @@
     }catch(e){ alert('Preview failed: '+(e.message||String(e))); }
   }
 
-  /* ===== Sheets helpers (GViz JSON → fallback CSV) ===== */
+  /* ===== Sheets helpers (GViz → CSV fallbacks) ===== */
   function parseCsvTable(text){
     const rows = []; let row = [], inQuotes = false, field = '';
     for (let i=0; i<text.length; i++){
@@ -424,8 +419,7 @@
       return parseCsvTable(await rCsv.text());
     }
     throw new Error('No sheetName or gid configured.');
-}
-
+  }
 
   /* ===== Work History table renderer ===== */
   function renderWorksTable(container, table, sheetId){
@@ -621,8 +615,8 @@
   async function drawWorksSheetView(bakery, machine, container){
     const entry = WORKS_SHEETS?.[bakery]?.[machine];
     if(!entry || !entry.sheetId){
-      container.innerHTML = '<div class="small">No Google Sheet configured for this machine. Showing Drive folder instead.</div>';
-      return null; // caller će onda nacrtati Drive listing (fallback)
+      container.innerHTML = '<div class="small">No Google Sheet configured for this machine. Showing Drive listing instead.</div>';
+      return null;
     }
     try{
       container.innerHTML = '<div class="small">Loading Work History…</div>';
@@ -636,13 +630,15 @@
   }
 
   /* ===== Views ===== */
+  function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
+
   function drawHome(){
     crumbsSet([{label:'Home'}]);
     const view=document.getElementById('view'); view.innerHTML='';
     const wrap=document.createElement('div'); wrap.className='stack';
 
     ['Bakery 1','Bakery 2','Bakery 3','Other'].forEach(b=>{
-      if (isOperator() && b==='Other') return; // operator ne vidi Other sekciju
+      if (isOperator() && b==='Other') return; // operator ne vidi Other
       const a=document.createElement('a');
       a.className='tile';
       a.href=`?bakery=${encodeURIComponent(b)}`;
@@ -653,11 +649,10 @@
   }
 
   function drawBakery(b){
-    if (isOperator() && b==='Other'){ go({}); return; } // operator blokiran
+    if (isOperator() && b==='Other'){ go({}); return; }
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}}]);
     const view=document.getElementById('view'); view.innerHTML='';
     const machines = MACHINES[b]||[];
-    if(!machines.length){ drawMachine(b,'—'); return; }
     const wrap=document.createElement('div'); wrap.className='stack';
     machines.forEach(m=>{
       const a=document.createElement('a');
@@ -670,17 +665,16 @@
   }
 
   function drawMachine(b,m){
-    if (isOperator() && b==='Other'){ go({}); return; } // safety
+    if (isOperator() && b==='Other'){ go({}); return; }
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}}]);
     const view=document.getElementById('view'); view.innerHTML='';
     const card=document.createElement('div'); card.className='card';
     const h=document.createElement('h3'); h.textContent=`${b} › ${m}`; card.appendChild(h);
     const grid=document.createElement('div'); grid.className='grid';
 
-    const isOtherGroup = (b==='Other');
+    const isOther = (b==='Other');
 
-    if (isOtherGroup){
-      // U "Other" isključivo Documentation + Procedures
+    if (isOther){
       ['documentation','procedures'].forEach(k=>{
         const meta=CATS[k];
         const a=document.createElement('a');
@@ -691,8 +685,7 @@
       });
     } else {
       Object.entries(CATS).forEach(([k,meta])=>{
-        // Opcija A: operator uopće ne vidi Work History
-        if (isOperator() && (k==='works' || k==='electrical')) return;
+        if (isOperator() && (k==='works' || k==='electrical')) return; // operator ne vidi ova dva
         const a=document.createElement('a');
         a.className=`tile square ${meta.color}`;
         a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
@@ -705,15 +698,9 @@
     view.appendChild(card);
   }
 
-  function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
-
   function drawCategory(b,m,catKey){
     const cat=CATS[catKey]; if(!cat){ go({bakery:b,machine:m}); return; }
-
-    // Opcija A: operator ne smije uopće vidjeti Work History ni Electrical
     if (isOperator() && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
-
-    // "Other" nema works/electrical
     if (b==='Other' && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
 
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}},{label:cat.title,to:{bakery:b,machine:m,cat:catKey}}]);
@@ -805,7 +792,6 @@
 
         const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
 
-        // Admin: toggle Allow operator (samo za doc/proc)
         if (adminMode && isAdmin() && isDocOrProc){
           const lbl=document.createElement('label'); lbl.className='small'; lbl.style.display='flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
           const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = getOpAllowSet().has(f.id);
@@ -853,22 +839,20 @@
       };
     }
 
-    // Ako je kategorija Work History i postoji Sheet mapping → nacrtaj tablicu iznad liste,
-    // a Drive listing služi kao fallback SAMO ako mapping ne postoji (po tvojoj potvrdi “Da, da”).
+    // Ako je kategorija Work History, pokušaj nacrtati tablicu iz Sheeta iznad liste
     if (catKey==='works'){
-      // Ako operator nekako dođe URL-om — zaštita (opcija A)
-      if (isOperator()){ go({bakery:b,machine:m}); return; }
-
+      if (isOperator()){ go({bakery:b,machine:m}); return; } // zaštita
       const sheetWrap = document.createElement('div');
       sheetWrap.className='card';
       sheetWrap.style.marginTop='12px';
       sheetWrap.innerHTML = '<div class="small">Loading Work History…</div>';
-      view.insertBefore(sheetWrap, card); // prikaži tablicu iznad liste
-
-      const loaded = await drawWorksSheetView(b,m,sheetWrap);
-      if (loaded===null){
-        sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
-      }
+      view.insertBefore(sheetWrap, card);
+      // *** NEMA await ovdje (ovo je popravak) ***
+      drawWorksSheetView(b,m,sheetWrap).then(loaded=>{
+        if (loaded===null){
+          sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
+        }
+      });
     }
   }
 
@@ -930,32 +914,25 @@
     crumbsSet([{label:'Home',to:{}},{label:`Search: ${query}`,to:{q:query}}]);
     renderSearchResultsHeader(query);
     const list = document.getElementById('globalResults');
-    list.innerHTML = '<div class="small">Scanning mapped folders…</div>';
-    const concurrency = 6; let idx = 0, resultsCount = 0; list.innerHTML = '';
+    const concurrency = 6; let idx = 0, resultsCount = 0;
 
     const allowSet = getOpAllowSet();
-
     async function worker(){
       while(idx < FOLDER_INDEX.length){
         const i = idx++; const meta = FOLDER_INDEX[i];
-
-        // Operator pretražuje samo Documentation/Procedures i samo allowed fileove
         if (isOperator() && !(meta.cat==='documentation' || meta.cat==='procedures')) continue;
-
         try{
           let files = isAdminSignedIn() ? await searchFolderPrivate(meta.folderId, query) : await searchFolderPublic(meta.folderId, query);
-          if (isOperator()){
-            files = files.filter(f => allowSet.has(f.id));
-          }
+          if (isOperator()) files = files.filter(f => allowSet.has(f.id));
           files.forEach(f => { appendSearchItem(list, meta, f, isAdminSignedIn()); resultsCount++; });
-        }catch(e){ /* ignore per-folder errors */ }
+        }catch(e){ /* ignore */ }
       }
     }
     await Promise.all(Array.from({length: Math.min(concurrency, FOLDER_INDEX.length)}, worker));
     if(resultsCount === 0){ list.innerHTML = '<div class="small">No results.</div>'; }
   }
 
-  /* ===== Router ===== */
+  /* ===== Router & Startup ===== */
   function draw(){
     refreshHeaderAuth();
     const p=params(); const b=p.get('bakery'); const m=p.get('machine'); const c=p.get('cat'); const q=p.get('q');
@@ -967,9 +944,7 @@
     if(b && m && c){ drawCategory(b,m,c); return; }
   }
 
-  /* ===== Startup ===== */
   window.addEventListener('load', ()=>{
-    // inicijalni tiles (Home)
     const stack = document.getElementById('homeStack');
     if (stack){
       stack.innerHTML = '';
@@ -1034,7 +1009,6 @@
   pinBtn.addEventListener('click', checkPin);
   pinInput.addEventListener('keypress', e=>{ if(e.key === 'Enter') checkPin(); });
 
-  // auto-hide lock ako je već otključano
   if(sessionStorage.getItem('unlocked') === '1'){
     doUnlock(sessionStorage.getItem('role')||'operator');
   }
