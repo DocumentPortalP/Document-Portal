@@ -247,7 +247,7 @@
     const role = getRole();
     if (sessionStorage.getItem('unlocked')==='1'){
       roleBadge.style.display = '';
-      roleBadge.textContent = `Logged in as: ${role}`;
+      roleBadge.textContent = `${role}`;
       logoutBtn.style.display = '';
     } else {
       roleBadge.style.display = 'none';
