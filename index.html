@@ -49,10 +49,9 @@
   .data tbody tr:hover{background:var(--hover)}
   .data .cell-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;color:#334155}
   .data td, .data th { overflow-wrap:anywhere; word-break:break-word; }
-  .data td.wide, .data th.wide { min-width:420px; }           /* Job Description / Action Taken */
-  .data td.asset, .data th.asset { min-width:260px; white-space:nowrap; } /* Asset column */
+  .data td.wide, .data th.wide { min-width:420px; }
+  .data td.asset, .data th.asset { min-width:260px; white-space:nowrap; }
 
-  /* Top horizontal scrollbar for wide tables (Work History) */
   .scroll-x-top{
     overflow-x:auto; overflow-y:hidden;
     height:14px; background:#fff;
@@ -110,10 +109,8 @@
   <main>
     <nav class="crumbs" id="crumbs"></nav>
     <section id="view">
-      <div class="stack">
-        <a class="tile" href="?bakery=Bakery%201"><h2>Bakery 1</h2><p>Open</p></a>
-        <a class="tile" href="?bakery=Bakery%202"><h2>Bakery 2</h2><p>Open</p></a>
-        <a class="tile" href="?bakery=Bakery%203"><h2>Bakery 3</h2><p>Open</p></a>
+      <div class="stack" id="homeStack">
+        <!-- Home tiles are rendered dynamically -->
       </div>
     </section>
   </main>
@@ -132,8 +129,14 @@
   const MACHINES = {
     'Bakery 1': ['Mixing','Fermentation','Fritsch','Proover','Oven','Cooler','Freezer'],
     'Bakery 2': ['Mixing','Fermentation','Spiro','Scarifier','Retarder','Rademaker','Proover','Oven','MIB','Freezer','Cooler','AHU'],
-    'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail']
+    'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail'] // "Other" će se dodati ispod
   };
+
+  // --- Dodaj "Other" ispod Bakery 3 (ako nije već dodan)
+  (()=>{
+    const arr = MACHINES['Bakery 3'];
+    if (arr && !arr.includes('Other')) arr.push('Other');
+  })();
 
   const FOLDERS = {
     'Bakery 1': {
@@ -166,7 +169,8 @@
       'Site 1 Packing': {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace('d','')},
       'Site 2 Packing': {documentation:'17DXdFMXZBpf9mtZ4c5ZrGsSZTbfkBYft', works:'1_GcauA20-3UKzkFYpLgM9aEcZu6ZL3Q7', electrical:'1LXWzf4qDRATSiXnfgy1gguOyR5qOYISY', procedures:'1iUSiN9lkyd-Cfl2eWtgfeOX8U42dE4fQ'},
       'Paletiser':      {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace(' ','')},
-      'Retail':         {documentation:'1wVv6BzVnpgv7PDw7rPmSqFUCfp2RVo8d', works:'1_HXYuj17giRiwPIWE_AJqwYCOgCpAMBv', electrical:'1rvYAmcDNc-sKCnZlyQRXnqC3ujkhLiXl', procedures:'1BG_ajXL8jdBiwOGYoUncJazdOUnoWZS6'}
+      'Retail':         {documentation:'1wVv6BzVnpgv7PDw7rPmSqFUCfp2RVo8d', works:'1_HXYuj17giRiwPIWE_AJqwYCOgCpAMBv', electrical:'1rvYAmcDNc-sKCnZlyQRXnqC3ujkhLiXl', procedures:'1BG_ajXL8jdBiwOGYoUncJazdOUnoWZS6'},
+      'Other':          {documentation:'FOLDER_ID_DOCS', procedures:'FOLDER_ID_PROCS'} /* ⬅️ zamijeni ID-eve */
     }
   };
 
@@ -231,6 +235,25 @@
     });
   }
 
+  /* ===== Permission / Roles ===== */
+  const ROLE_PINS = { '1111':'operator', '2906':'engineer', '1782':'admin' };
+  function getRole(){ return sessionStorage.getItem('role') || 'operator'; }
+  function isOperator(){ return getRole()==='operator'; }
+  function isEngineer(){ return getRole()==='engineer'; }
+  function isAdmin(){ return getRole()==='admin'; }
+
+  // Whitelist (global) koji file ID-ovi su vidljivi operatoru
+  const OP_ALLOW_KEY = 'operatorAllowList';
+  function getOpAllowSet(){
+    try{ const arr = JSON.parse(localStorage.getItem(OP_ALLOW_KEY)||'[]'); return new Set(arr); }catch{ return new Set(); }
+  }
+  function setOpAllow(fileId, allow){
+    const s = getOpAllowSet();
+    if(allow) s.add(fileId); else s.delete(fileId);
+    localStorage.setItem(OP_ALLOW_KEY, JSON.stringify(Array.from(s)));
+  }
+
+  /* ===== Home / Bakery / Machine ===== */
   function drawHome(){
     crumbsSet([{label:'Home'}]);
     const view=document.getElementById('view');
@@ -249,7 +272,7 @@
   function drawBakery(b){
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}}]);
     const view=document.getElementById('view'); view.innerHTML='';
-    const machines = MACHINES[b]||[];
+    const machines = (MACHINES[b]||[]).filter(m => !(isOperator() && b==='Bakery 3' && m==='Other')); // operator NE vidi Other
     if(!machines.length){ drawMachine(b,'—'); return; }
     const wrap=document.createElement('div'); wrap.className='stack';
     machines.forEach(m=>{
@@ -263,18 +286,36 @@
   }
 
   function drawMachine(b,m){
+    // operator ne smije direktno u Other čak ni URL-om
+    if (isOperator() && b==='Bakery 3' && m==='Other'){ go({bakery:b}); return; }
+
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}}]);
     const view=document.getElementById('view'); view.innerHTML='';
     const card=document.createElement('div'); card.className='card';
     const h=document.createElement('h3'); h.textContent=`${b} › ${m}`; card.appendChild(h);
     const grid=document.createElement('div'); grid.className='grid';
-    Object.entries(CATS).forEach(([k,meta])=>{
-      const a=document.createElement('a');
-      a.className=`tile square ${meta.color}`;
-      a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
-      a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
-      grid.appendChild(a);
-    });
+
+    // Ako je "Other" → prikaži samo Documentation i Procedures (za admin/engineer)
+    if (m==='Other'){
+      ['documentation','procedures'].forEach(k=>{
+        const meta = CATS[k];
+        const a=document.createElement('a');
+        a.className=`tile square ${meta.color}`;
+        a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
+        a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
+        grid.appendChild(a);
+      });
+    } else {
+      Object.entries(CATS).forEach(([k,meta])=>{
+        if (isOperator() && k!=='documentation' && k!=='procedures') return; // operator samo doc + procedures
+        const a=document.createElement('a');
+        a.className=`tile square ${meta.color}`;
+        a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
+        a.innerHTML=`<h2>${meta.title}</h2><p>${meta.desc}</p>`;
+        grid.appendChild(a);
+      });
+    }
+
     card.appendChild(grid);
     document.getElementById('view').appendChild(card);
   }
@@ -312,18 +353,17 @@
     return await r.blob();
   }
 
-  async function openInlinePreview(f,isAdmin){
+  async function openInlinePreview(f,isAdminMode){
     try{
       previewTitleEl.textContent = f.name || 'Preview';
-      previewDownload.href = isAdmin ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
+      previewDownload.href = isAdminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
       const previewUrl = `https://drive.google.com/file/d/${f.id}/preview`;
       const showWm = new URLSearchParams(location.search).get('wm')==='1';
       wmEl.style.display = showWm ? 'flex' : 'none';
 
-      // Inline video playback
       if (isVideo(f.mimeType, f.name)){
         try{
-          if(isAdmin){
+          if(isAdminMode){
             const blob = await fetchPrivateBlob(f.id);
             const url = URL.createObjectURL(blob);
             previewVideo.dataset.blobUrl = url;
@@ -338,9 +378,8 @@
         }catch(e){ console.warn('Video inline failed, fallback to Drive preview'); }
       }
 
-      // Images & PDFs inline
       if (isPdf(f.mimeType) || isImage(f.mimeType, f.name)){
-        if(isAdmin){
+        if(isAdminMode){
           try{
             const blob = await fetchPrivateBlob(f.id);
             const url = URL.createObjectURL(blob);
@@ -351,7 +390,6 @@
         previewFrame.src = previewUrl; showPreview(); return;
       }
 
-      // Other types → Drive viewer
       window.open(f.webViewLink || `https://drive.google.com/file/d/${f.id}/view`, '_blank');
     }catch(e){ alert('Preview failed: '+(e.message||String(e))); }
   }
@@ -365,6 +403,8 @@
     gapiReady=true;
   }
   async function ensureAuth(){
+    // samo admin se smije autentificirati
+    if(!isAdmin()) throw new Error('Only admin can sign in.');
     if(accessToken) return accessToken;
     await ensureGapi();
     return new Promise((res,rej)=>{
@@ -379,7 +419,7 @@
   function isAdminSignedIn(){ return !!accessToken; }
   function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
 
-  /* ===== SHEET HELPERS (robust) ===== */
+  /* ===== SHEET HELPERS ===== */
   function parseCsvTable(text){
     const rows = [];
     let row = [], inQuotes = false, field = '';
@@ -402,14 +442,12 @@
     return { headers, rows };
   }
 
-  // Parse GViz Date(...) / Excel serial / common text dates
   function parseDateSmart(v){
     if (v == null) return NaN;
     if (v instanceof Date) { const t=v.getTime(); return isNaN(t)?NaN:t; }
-
     if (typeof v === 'string' && /^Date\(\d{4},\d{1,2},\d{1,2}(,\d{1,2},\d{1,2}(,\d{1,2})?)?\)$/.test(v)){
       const nums=v.slice(5,-1).split(',').map(n=>parseInt(n,10));
-      const [Y,M,D,h=0,m=0,s=0]=nums; // GViz month is 0-based
+      const [Y,M,D,h=0,m=0,s=0]=nums;
       const dt=new Date(Y, M, D, h, m, s);
       return dt.getTime();
     }
@@ -436,12 +474,11 @@
     const hh = d.getHours();
     const mi = d.getMinutes();
     const ss = d.getSeconds();
-    const base = `${dd}.${mm}.${yyyy}`; // dd.mm.yyyy
+    const base = `${dd}.${mm}.${yyyy}`;
     const timePresent = (hh+mi+ss) !== 0;
     return timePresent ? `${base} ${String(hh).padStart(2,'0')}:${String(mi).padStart(2,'0')}` : base;
   }
 
-  // Fetch Google Sheet table with types; prefer formatted display strings
   async function fetchSheetTable(sheetId, sheetName, gid){
     if (sheetName) {
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
@@ -459,8 +496,8 @@
         const types = cols.map(c => (c && c.type) || 'string').map(t => t==='date'||t==='datetime' ? 'date' : (t==='number' ? 'number' : 'text'));
         const rows = (data.table.rows||[]).map(r => (r.c||[]).map(c => {
           if(!c) return '';
-          if (c.f != null && c.f !== '') return c.f; // prefer formatted text from Sheets
-          if (typeof c.v === 'string' && /^Date\(/.test(c.v)) return c.v; // otherwise keep GViz literal
+          if (c.f != null && c.f !== '') return c.f;
+          if (typeof c.v === 'string' && /^Date\(/.test(c.v)) return c.v;
           return (c.v ?? '');
         }));
 
@@ -495,7 +532,7 @@
     throw new Error('No sheetName or gid configured.');
   }
 
-  /* ===== Work History renderer (with top scrollbar + robust default date sort) ===== */
+  /* ===== Work History renderer ===== */
   function renderWorksTable(container, table, sheetId){
     container.innerHTML = '';
 
@@ -505,11 +542,10 @@
     const dlBtn = document.createElement('button'); dlBtn.className='btn ghost badge'; dlBtn.textContent='Download CSV';
     const openGs = document.createElement('button'); openGs.className='btn ghost badge'; openGs.textContent='Open in Google Sheets (Admin)';
     adminBtns.append(dlBtn, openGs);
-    adminBtns.style.display = isAdminSignedIn() ? 'flex' : 'none';
+    adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; // samo admin
     bar.append(search, adminBtns);
     container.appendChild(bar);
 
-    /* Top horizontal scrollbar */
     const topScroll = document.createElement('div');
     topScroll.className = 'scroll-x-top';
     const topInner = document.createElement('div');
@@ -548,7 +584,6 @@
 
     let currentRows = table.rows.slice();
 
-    /* Infer types */
     const inferredTypes = (table.types && table.types.length===table.headers.length)
       ? table.types.slice()
       : table.headers.map((_, col) => {
@@ -565,15 +600,11 @@
           return isDate ? 'date' : (isNum ? 'number' : 'text');
         });
 
-    /* Pick best default date column (works for Mixing too) */
     function pickBestDateColumn(){
-      // 1) by header name
       const byName = table.headers.findIndex(h =>
         h && /^(completed\s*on|completed|completion\s*date|date\s*completed|date\/time|date|datum)$/i.test(String(h).trim())
       );
       if (byName !== -1) return byName;
-
-      // 2) by content: column with most valid dates in sample
       let bestCol = -1, bestCount = 0;
       for (let c=0; c<table.headers.length; c++){
         let cnt = 0;
@@ -599,7 +630,7 @@
         if (isNaN(na) && isNaN(nb)) return 0;
         if (isNaN(na)) return 1;
         if (isNaN(nb)) return -1;
-        return na - nb;                // ascending: oldest → newest
+        return na - nb;
       } else if (t==='number'){
         const na = Number(va); const nb = Number(vb);
         if (isNaN(na) && isNaN(nb)) return 0;
@@ -629,7 +660,6 @@
       return String(v ?? '');
     }
 
-    /* sync top/bottom scroll */
     function syncTopWidth(){ topInner.style.width = tableEl.scrollWidth + 'px'; }
     function syncFromTop(){ wrap.scrollLeft = topScroll.scrollLeft; }
     function syncFromBottom(){ topScroll.scrollLeft = wrap.scrollLeft; }
@@ -667,14 +697,13 @@
       renderBody();
     }
 
-    // initial default sort
     let completedCol = table.headers.findIndex(h =>
       h && /^(completed\s*on|completed|completion\s*date|date\s*completed)$/i.test(String(h).trim())
     );
     if (completedCol === -1) completedCol = pickBestDateColumn();
     if (completedCol !== -1){
       sortCol = completedCol;
-      sortDir = 1; // oldest → newest
+      sortDir = 1;
       currentRows.sort((a,b)=> sortDir * cmp(a,b,completedCol) );
     }
 
@@ -693,13 +722,13 @@
     };
     openGs.onclick = async ()=>{
       try{
-        if(!isAdminSignedIn()) await ensureAuth();
+        await ensureAuth(); // samo admin
         if (sheetId) window.open(`https://docs.google.com/spreadsheets/d/${sheetId}/edit`, '_blank');
         else alert('Sheet ID not found');
       }catch(e){ alert('Admin sign-in failed: ' + (e.message || String(e))); }
     };
 
-    const reveal = ()=>{ adminBtns.style.display = isAdminSignedIn() ? 'flex' : 'none'; };
+    const reveal = ()=>{ adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; };
     setInterval(reveal, 800);
   }
 
@@ -725,6 +754,9 @@
     const cat=CATS[catKey];
     if(!cat){ go({bakery:b,machine:m}); return; }
 
+    // Operator može samo Documentation i Procedures
+    if (isOperator() && (catKey!=='documentation' && catKey!=='procedures')) { go({bakery:b,machine:m}); return; }
+
     crumbsSet([
       {label:'Home',to:{}},
       {label:b,to:{bakery:b}},
@@ -740,7 +772,7 @@
     const hint = document.createElement('div'); hint.className='small'; card.appendChild(hint);
     function refreshHint(){
       if(!fid){ hint.style.display = ''; hint.innerHTML = '⚠️ Set Drive folder ID in <code>FOLDERS</code>.'; }
-      else if (accessToken) { hint.style.display = ''; hint.innerHTML = `Folder ID: <code>${escapeHtml(fid)}</code>`; }
+      else if (isAdminSignedIn()) { hint.style.display = ''; hint.innerHTML = `Folder ID: <code>${escapeHtml(fid)}</code>`; }
       else { hint.style.display = 'none'; hint.innerHTML = ''; }
     }
     refreshHint();
@@ -748,26 +780,25 @@
     const bar=document.createElement('div'); bar.className='toolbar';
     const search=document.createElement('input'); search.type='search'; search.placeholder='Search files';
     const refresh=document.createElement('button'); refresh.className='btn ghost'; refresh.textContent='Refresh';
+
     const adminBtn=document.createElement('button'); adminBtn.className='btn ghost'; adminBtn.textContent='Admin: Sign in';
     const openFolderBtn=document.createElement('button'); openFolderBtn.className='btn'; openFolderBtn.textContent='Open Drive folder (Admin)'; openFolderBtn.style.display='none';
     openFolderBtn.onclick=()=>{ if(fid) window.open(`https://drive.google.com/drive/folders/${fid}`, '_blank'); };
 
-    bar.append(adminBtn, openFolderBtn, search, refresh); card.appendChild(bar);
+    // Admin-only UI elementi
+    if (isAdmin()){
+      bar.append(adminBtn, openFolderBtn);
+    }
+    bar.append(search, refresh);
+    card.appendChild(bar);
 
     const list=document.createElement('div'); list.className='list'; card.appendChild(list);
     view.appendChild(card);
 
-    if (catKey === 'works') {
-      const sheetEntry = WORKS_SHEETS?.[b]?.[m];
-      if (sheetEntry && sheetEntry.sheetId) {
-        refresh.style.display = 'none';
-        drawWorksSheetView(b, m, list).catch(e => { list.innerHTML = `<div class="small">Failed to load Work History: ${escapeHtml(e.message||String(e))}</div>`; });
-        adminBtn.onclick = async () => { try{ await ensureAuth(); adminBtn.style.display='none'; refreshHint(); openFolderBtn.style.display=''; }catch(e){ alert('Sign-in failed: ' + (e.message || String(e))); } };
-        return;
-      }
-    }
+    const allowSet = getOpAllowSet();
+    const isDocOrProc = (catKey==='documentation' || catKey==='procedures');
 
-    /* PUBLIC listing */
+    // === PUBLIC listing (anon key) ===
     async function publicListFiles(){
       list.innerHTML='<div class="small">Loading…</div>';
       try{
@@ -780,25 +811,29 @@
         });
         const res=await fetch('https://www.googleapis.com/drive/v3/files?'+params.toString());
         if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error?.message||('HTTP '+res.status)); }
-        const data=await res.json();
-        let items=data.files||[];
-        const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
+        let items=(await res.json()).files||[];
+
+        // Filter po search
+        const s=(search.value||'').toLowerCase();
+        if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
+
+        // Operator filter: whitelist za Documentation/Procedures
+        if (isOperator()){
+          if (isDocOrProc){
+            items = items.filter(f => allowSet.has(f.id));
+            if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; }
+          } else {
+            list.innerHTML = '<div class="small">Not permitted.</div>'; return;
+          }
+        }
+
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        list.innerHTML='';
-        items.forEach(f=>{
-          const row=document.createElement('div'); row.className='item';
-          const title=document.createElement('a'); title.className='title'; title.href='#';
-          title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f,false); };
-          const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
-          title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
-          const dl=document.createElement('a'); dl.className='icon-btn'; dl.href=publicDownloadUrl(f.id); dl.target='_blank'; dl.rel='noopener';
-          dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-          row.append(title,dl); list.appendChild(row);
-        });
+
+        renderFileRows(items, false);
       }catch(e){ list.innerHTML=`<div class="small">Public list error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
 
-    /* PRIVATE listing (admin) — with DELETE */
+    // === PRIVATE listing (admin) — s Allow Operator toggle + DELETE ===
     async function privateListFiles(){
       list.innerHTML='<div class="small">Loading…</div>';
       try{
@@ -808,42 +843,74 @@
         let items=res.result.files||[];
         const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        list.innerHTML='';
-        items.forEach(f=>{
-          const row=document.createElement('div'); row.className='item';
-          const title=document.createElement('a'); title.className='title'; title.href='#'; title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f,true); };
-          const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
-          title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
-          const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
-          const dl=document.createElement('a'); dl.className='icon-btn'; dl.href=`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`; dl.target='_blank'; dl.rel='noopener';
-          dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-          const del=document.createElement('button'); del.className='icon-btn';
+        renderFileRows(items, true);
+      }catch(e){ list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`; }
+    }
+
+    // renderer za redove
+    function renderFileRows(items, adminMode){
+      list.innerHTML='';
+      items.forEach(f=>{
+        const row=document.createElement('div'); row.className='item';
+
+        const title=document.createElement('a'); title.className='title'; title.href='#';
+        title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
+        const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
+        title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
+
+        const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+
+        // Admin: toggle Allow operator (samo za doc/proc)
+        if (adminMode && isAdmin() && isDocOrProc){
+          const lbl=document.createElement('label'); lbl.className='small'; lbl.style.display='flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
+          const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = getOpAllowSet().has(f.id);
+          cb.onchange=()=> setOpAllow(f.id, cb.checked);
+          lbl.append(cb, document.createTextNode('Allow operator'));
+          right.appendChild(lbl);
+        }
+
+        // Download button
+        const dl=document.createElement('a'); dl.className='icon-btn';
+        dl.href = adminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
+        dl.target='_blank'; dl.rel='noopener';
+        dl.title='Download';
+        dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        right.appendChild(dl);
+
+        // Admin: delete
+        if (adminMode && isAdmin()){
+          const del=document.createElement('button'); del.className='icon-btn'; del.title='Delete';
           del.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M10 7v12m4-12v12M9 7l1-2h4l1 2M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
           del.onclick=async()=>{
             if(!confirm('Delete file?')) return;
             try{ await gapi.client.drive.files.delete({fileId:f.id}); await privateListFiles(); }
             catch(e){ alert('Delete failed: '+(e.result?.error?.message||e.message)); }
           };
-          right.append(dl, del); row.append(title, right); list.appendChild(row);
-        });
-      }catch(e){ list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`; }
+          right.appendChild(del);
+        }
+
+        row.append(title, right);
+        list.appendChild(row);
+      });
     }
 
-    // Init: public
+    // Init layout: ako admin signed-in onda private, inače public
     publicListFiles();
     refresh.onclick = publicListFiles;
     search.oninput = publicListFiles;
 
-    adminBtn.onclick = async () => {
-      try{
-        await ensureAuth();
-        refreshHint(); openFolderBtn.style.display=''; adminBtn.style.display='none';
-        refresh.onclick = privateListFiles; search.oninput = privateListFiles; await privateListFiles();
-        const signOut = document.createElement('button'); signOut.className='btn ghost'; signOut.textContent='Admin: Sign out';
-        signOut.onclick = ()=>{ accessToken=null; alert('Signed out. Refresh to return to public mode.'); };
-        bar.append(signOut);
-      }catch(e){ alert('Sign-in failed: ' + (e.message || String(e))); }
-    };
+    if (isAdmin()){
+      adminBtn.onclick = async () => {
+        try{
+          await ensureAuth();
+          refreshHint(); openFolderBtn.style.display=''; adminBtn.style.display='none';
+          refresh.onclick = privateListFiles; search.oninput = privateListFiles; await privateListFiles();
+          const signOut = document.createElement('button'); signOut.className='btn ghost'; signOut.textContent='Admin: Sign out';
+          signOut.onclick = ()=>{ accessToken=null; alert('Signed out. Refresh to return to public mode.'); };
+          bar.append(signOut);
+        }catch(e){ alert('Sign-in failed: ' + (e.message || String(e))); }
+      };
+    }
   }
 
   /* ===== GLOBAL SEARCH ===== */
@@ -880,18 +947,22 @@
     const view=document.getElementById('view'); view.innerHTML='';
     const card=document.createElement('div'); card.className='card';
     const h=document.createElement('h3'); h.textContent=`Search results for “${query}”`; card.appendChild(h);
-    const small=document.createElement('div'); small.className='small'; small.textContent = isAdminSignedIn() ? 'Searching all mapped Drive folders (admin mode)…' : 'Searching public files in all mapped Drive folders…'; card.appendChild(small);
+    const small=document.createElement('div'); small.className='small';
+    small.textContent = isAdminSignedIn() ? 'Searching all mapped Drive folders (admin mode)…' : 'Searching public files in all mapped Drive folders…';
+    card.appendChild(small);
     const list=document.createElement('div'); list.className='list'; list.id='globalResults'; card.appendChild(list);
     view.appendChild(card);
   }
 
-  function appendSearchItem(container, meta, f){
+  function appendSearchItem(container, meta, f, adminMode){
     const row=document.createElement('div'); row.className='item';
-    const title=document.createElement('a'); title.className='title'; title.href='#'; title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, isAdminSignedIn()); };
+    const title=document.createElement('a'); title.className='title'; title.href='#'; title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
     const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
     const path = `${meta.bakery} › ${meta.machine} › ${CATS[meta.cat]?.title||meta.cat}`;
     title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(path)} • ${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
-    const dl=document.createElement('a'); dl.className='icon-btn'; dl.href = isAdminSignedIn() ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&key=${API_KEY}`; dl.target='_blank'; dl.rel='noopener';
+    const dl=document.createElement('a'); dl.className='icon-btn';
+    dl.href = adminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&key=${API_KEY}`;
+    dl.target='_blank'; dl.rel='noopener';
     dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     row.append(title, dl); container.appendChild(row);
   }
@@ -903,12 +974,23 @@
     list.innerHTML = '<div class="small">Scanning mapped folders…</div>';
     const concurrency = 6; let idx = 0, resultsCount = 0; list.innerHTML = '';
 
+    const allowSet = getOpAllowSet();
+
     async function worker(){
       while(idx < FOLDER_INDEX.length){
         const i = idx++; const meta = FOLDER_INDEX[i];
+
+        // Operator može pretraživati samo Documentation/Procedures i samo allowed file-ove
+        if (isOperator() && !(meta.cat==='documentation' || meta.cat==='procedures')) continue;
+
         try{
-          const files = isAdminSignedIn() ? await searchFolderPrivate(meta.folderId, query) : await searchFolderPublic(meta.folderId, query);
-          files.forEach(f => { appendSearchItem(list, meta, f); resultsCount++; });
+          let files = isAdminSignedIn() ? await searchFolderPrivate(meta.folderId, query) : await searchFolderPublic(meta.folderId, query);
+
+          if (isOperator()){
+            files = files.filter(f => allowSet.has(f.id));
+          }
+
+          files.forEach(f => { appendSearchItem(list, meta, f, isAdminSignedIn()); resultsCount++; });
         }catch(e){ /* ignore per-folder errors */ }
       }
     }
@@ -933,7 +1015,21 @@
     if(b && m && !c){ drawMachine(b,m); return; }
     if(b && m && c){ drawCategory(b,m,c); return; }
   }
-  window.addEventListener('load', draw);
+  window.addEventListener('load', ()=>{
+    // Render početne pločice ručno da uklonimo hardcoded HTML s početka
+    const stack = document.getElementById('homeStack');
+    if (stack){
+      stack.innerHTML = '';
+      ['Bakery 1','Bakery 2','Bakery 3'].forEach(B=>{
+        const a=document.createElement('a');
+        a.className='tile';
+        a.href='?bakery=' + encodeURIComponent(B);
+        a.innerHTML = `<h2>${B}</h2><p>Open</p>`;
+        stack.appendChild(a);
+      });
+    }
+    draw();
+  });
 
   /* ===== Global search form ===== */
   const gsForm = document.getElementById('globalSearchForm');
@@ -947,19 +1043,26 @@
   }
   if(clearBtn){ clearBtn.addEventListener('click', ()=>{ gsInput.value=''; go({}); clearBtn.style.display='none'; }); }
 
-  /* ===== PIN gate ===== */
-  const PIN_CODE = '2906';
+  /* ===== Multi-role PIN gate (zamjena starog PIN_CODE) ===== */
   const lock = document.getElementById('lockscreen');
   const pinInput = document.getElementById('pinInput');
   const pinBtn = document.getElementById('pinBtn');
   const pinMsg = document.getElementById('pinMsg');
+
+  function doUnlock(role){
+    sessionStorage.setItem('unlocked','1');
+    sessionStorage.setItem('role', role);
+    lock.style.display = 'none';
+    pinMsg.style.display = 'none';
+    pinInput.value='';
+    draw();
+  }
+
   function checkPin(){
     const val=(pinInput.value||'').trim();
-    if(val === PIN_CODE){
-      lock.style.display = 'none';
-      sessionStorage.setItem('unlocked','1');
-      pinMsg.style.display = 'none';
-      pinInput.value='';
+    const role = ROLE_PINS[val];
+    if (role){
+      doUnlock(role);
     } else {
       pinMsg.style.display = 'block';
       lock.animate([
@@ -973,9 +1076,17 @@
       setTimeout(()=>pinMsg.style.display='none', 1800);
     }
   }
+
+  window.checkPin = checkPin;
   pinBtn.addEventListener('click', checkPin);
   pinInput.addEventListener('keypress', e=>{ if(e.key === 'Enter') checkPin(); });
-  if(sessionStorage.getItem('unlocked') === '1'){ lock.style.display = 'none'; }
+
+  // auto-hide lock ako je sesija već otključana
+  if(sessionStorage.getItem('unlocked') === '1'){
+    const role = sessionStorage.getItem('role') || 'operator';
+    doUnlock(role);
+  }
   </script>
 </body>
 </html>
+
