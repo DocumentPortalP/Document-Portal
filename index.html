@@ -895,9 +895,12 @@ const MACHINES = {
       view.insertBefore(sheetWrap, card);
       // *** NEMA await ovdje (ovo je popravak) ***
       drawWorksSheetView(b,m,sheetWrap).then(loaded=>{
-        if (loaded===null){
-          sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
-        }
+        if (loaded!==null){
+    // ako sheet postoji, sakrij DIR listing (card) kompletno
+    card.style.display = 'none';
+  } else {
+    sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
+  }
       });
     }
   }
