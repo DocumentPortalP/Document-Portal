@@ -124,44 +124,90 @@
   <!-- Main App Script -->
   <script>
   /******** CONFIG ********/
-  const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
-  const API_KEY   = 'YOUR_PUBLIC_API_KEY';
+  const CLIENT_ID = '383558298407-fpbk518jrlovpqohkahl4bbf3vhn7qf3.apps.googleusercontent.com';
+  const API_KEY   = 'AIzaSyAU2nAWMCXzURJIxe-tlHXuCzLh5KmQadE';
   const SCOPES    = 'https://www.googleapis.com/auth/drive';
 
   /* ===== Structure ===== */
-  const MACHINES = {
+const MACHINES = {
     'Bakery 1': ['Mixing','Fermentation','Fritsch','Proover','Oven','Cooler','Freezer'],
     'Bakery 2': ['Mixing','Fermentation','Spiro','Scarifier','Retarder','Rademaker','Proover','Oven','MIB','Freezer','Cooler','AHU'],
     'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail'],
-    'Other'   : ['General']
+    'Other':    ['General'] // posebna grupa: ima samo Documentation + Procedures
   };
 
   const FOLDERS = {
     'Bakery 1': {
-      'Fritsch':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
-      'Mixing':       {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
-      'Oven':         {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
-      'Fermentation': {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
-      'Proover':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
-      'Freezer':      {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'},
-      'Cooler':       {documentation:'FOLDER_ID', works:'FOLDER_ID', electrical:'FOLDER_ID', procedures:'FOLDER_ID'}
+      'Fritsch':      {documentation:'1TtOQv5EThkDJ4c23I7epY40kpL_14M-q', works:'134xHl2fufzon1ran2kB2WsqEkQK4m5EH', electrical:'18DxayxAeo0s9q88h7KGOr21zfPQdstgG', procedures:'1QkNnG6d-RBw2j6EYooxR92vcE9phz0FS'},
+      'Mixing':       {documentation:'1DoHLHHWodvbwTHjhirZBM4BhlDksI_qw', works:'1YuodKUqBDehzsKK3iFk0GNLHf2vEmZw9', electrical:'1v4ZHV40KiQPs2DwP52mAWTQ3o4Yju2Os', procedures:'1HNFXp1e8SFM-b1K809a5RL8c-oTGj3mv'},
+      'Oven':         {documentation:'1y5xdJ5qqnYrcHieec6_5oaID2EuZ9n1f', works:'1vmb4uS7fsUy8dmcvFGDQAfcTVVyO0kTj', electrical:'1gnZxD4TedfURVOD3mOBRNA3MRTqyrO-s', procedures:'1u30duEKrD3ZMYey62Jy_qFI99D8T9Agx'},
+      'Fermentation': {documentation:'15coru1xjzm8apuySDx0Rkf1Yihwkiny8', works:'1qo4xBLzKMWuQivKdP_ae1d-sLrhIUFuj', electrical:'1Hm7sc0le89MaGoyGT9xUHGu8EUxPRXlZ', procedures:'1iFxs_EDCTJPXEcOYFBqdVaK2l-tHCwKa'},
+      'Proover':      {documentation:'1is9dH0PYJztEGdLvrQvGTPmNChy2YUZR', works:'1d3WMB-UponsZlvrTCLe4X9SSfdwELI2o', electrical:'1OPg5oxNYMsVw22ClRQpVGrmdv_sFHcsd', procedures:'1y-XxNHUbSepwnYZ2JTf6tKSnfsc8zZWz'},
+      'Freezer':      {documentation:'1fEougP82KxPmNTgXKZk5-MgVz9GbvUl4', works:'1tm3d974D4pAXgBgw7FeGB6rm1oSGP1_I', electrical:'1aLRFUMsUvLen7MKaiPCUZ7xn5OpBvguP', procedures:'10U-eNWpipgLvxbm8Gn33IQOnuOLqA8Fg'},
+      'Cooler':       {documentation:'1DytWdFirwApX6iLUMFG_jDSQvAkTWqEw', works:'1kSI1l5bxugVx9n1Atla22cLHicEOu2D8', electrical:'1pLqnD3W0Ku1pPMQbTa5vzKyi4HKvzKKo', procedures:'1-AY6xw5axJ6MGA0RClSTejpfraXTTd63'}
     },
-    'Bakery 2': { /* upiši svoje */ },
-    'Bakery 3': { /* upiši svoje */ },
+    'Bakery 2': {
+      'Mixing':       {documentation:'1zudP8sLtYeXdPDUiTQX8ncJEiFNi5PGp', works:'1h4VdDBSbGRiwkorV8KfSy9NeYF3Aq0fr', electrical:'1PchyAchzNw5bdLjAGyK0xsZ253WteLxU', procedures:'1O1cUvvOyqmFYZM8tGW1vRDu76EaK1C6-'},
+      'Fermentation': {documentation:'1BAUGAc52IPeHnR5f4raZ523ulPejyi9R', works:'1cLviY22iu7dFzpOiGNDf96ejXkl0dpCk', electrical:'1JIAqmNUPuQiDwgbLxlXCPPwHzCuP3788', procedures:'1fkvMcqu8koQJ4qJtL4_Sv1-_7wY69Ny7'},
+      'Spiro':        {documentation:'10JnBXfbcYIGfeiquWzFzSguphIOq3pUf', works:'1mzpcxhHOxvr0WPY2wmq-hlcwGGyTHHyH', electrical:'1QTNlFpETS4VlmWJo3fsi3nNXe4A9Wnf9', procedures:'10gE02-AkbNf5PqxSfX_L_CJ1-kwgBTl8'},
+      'Scarifier':    {documentation:'1Lc7zAzGJdsZRHYu6zJotw3UWqOxnSauJ'.replace('5',''), works:'1Xwhy2UH3pOUlfRypjqpVK5X1-icv2mR6', electrical:'1HHYmBtNllKX5shoVMJtiIqYonIMlc8g_', procedures:'1JXB_iQsJa8QveOVKDZKbML-jDPNnVMdB'},
+      'Retarder':     {documentation:'1PyKR_lK7Ts9AfxwVNHgzCka7SgnCBAYX', works:'1oQC9jLCFmLtUVMwTanNnD50_juZm-H6t', electrical:'1V_iHswv8gWFEPZA4tEjoPic54fcJ4bCi', procedures:'1s3O6P1LPYRUblYSECrGPkGUFiIqzDAPP'},
+      'Rademaker':    {documentation:'1fW0ZDXRKGDV83xDw3sEJvWV9ukTvBkmC', works:'1mOX5mGPjxwEy5incajN42hPNYr7DQgK6', electrical:'1WY6walad34lCcnXlDS_YHc1nfGeHQa0n', procedures:'1PcGT1N-TGPBcTkDVU5ElLEmIwJnAkvaS'},
+      'Proover':      {documentation:'18FQjqiPEdoWccfcWj1QacgXTjG5eR0ye', works:'1M6tHWqPQmo8dbo1A-KKa3O9i9E6c0SvU', electrical:'1xKPYZEGfojToDwrRiluD96sCH6j0UpD1', procedures:'1iVp3SOPCdW19tdfl1sunwac7RpwwlcQF'},
+      'Pattyn Tilting Conveyer':{documentation:'10s3jPwp6dROLtu1VtXxy6s90ekclFKeL', works:'1lRj5oUVMFNzm4dmAiK_Hs-dTXcNrLPDL', electrical:'1JRztMfGW-mK2Q2aaanLOeO_M6dUB6Co-', procedures:'1vaoFOUtk3GwbiOcoZGwisU2lXS3JWDr1'},
+      'Packing':      {documentation:'1b7lejvDhl3t-QtXXtcwYQrfinb1A3d37', works:'14DaubNbxDI4kHkY1lybR5aO8BDY5FXkz', electrical:'1XT0X0llTt_MC0f-1YGik426rTD8Iv8Wa', procedures:'1g8hL-uQkGgGeeBHgoL_bqNcLigN8aSj8'},
+      'Oven':         {documentation:'1B7FTUY4FPyBS1t8pqQ5GqDtemgpYQ74z', works:'1wR6ZkTK97KY-M8Maf-b9-2GbigdcNU0Y', electrical:'1pWjIvbrHLRxtA3POj8paD8tche25aQXx', procedures:'1oncf1Y_zHY4mYywLvEjs7S8gZpbKVlCe'},
+      'MIB':          {documentation:'1U7vrSwXzraP5k2qXetBknw1sMUwEyaJ7', works:'1KHJD6Ym4gcV6Lj5yGMUJM7tIuOz11eYu', electrical:'13reFyzrc9hqbnINlS9mszlGAnuTRPr1C', procedures:'1CVlhpzWsvQ4jnJL77Cy64FC-jRILkHLs'},
+      'Freezer':      {documentation:'1FFyFlKJEI4hfrxQmuKPQlDkOz72YCT5C', works:'1n52QVId2cUAG-LBUueWEoGyPZTOYb2SD', electrical:'1xqcwh5GvmZgSkCyffzQNINw4P_91W4Df', procedures:'1X14Fgcb8rESKIGQNXVo1bVT9cYn_f4s6'},
+      'Cooler':       {documentation:'1R76AuyOoR-s0Bg9XmR3rYvvQN6oKm9Po', works:'16zlYojFfOTrSFgd7th5qPrJPJ5ceM2-z', electrical:'1SFVbg_a2mcStLcTzZ2i8F-skeZ6F1Hvq', procedures:'15lIE4UUaIBiXXTEz_zPHGo9ciCI0H2lT'},
+      'Baggers':      {documentation:'1HzHV6G7HZFJ-kjC8xsXp5HyO-YXd5MaU', works:'1jB5B1NEEhkDmUjhoJeMJ476I6hgU6OtK', electrical:'17TFo6H4iR3LniJ-hDIA_7U8KhgGeatKh', procedures:'1igbb3Co4Fgv8ZWySAwGt34BD8qLXAlv3'},
+      'AHU':          {documentation:'1HhUMMmTdLqLssVd0n8ELraF7vHEypERT', works:'1IONOZH5Oh20bRQiOKFdrBACjnmECXF6d', electrical:'1Qx3Izd-STjJ34HO4qoUW-va6g_62yCow', procedures:'1N_94znXfxOeYlChDRUWo2O7NCRCAFYYI'}
+    },
+    'Bakery 3': {
+      'Site 1 Packing': {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace('d','')},
+      'Site 2 Packing': {documentation:'17DXdFMXZBpf9mtZ4c5ZrGsSZTbfkBYft', works:'1_GcauA20-3UKzkFYpLgM9aEcZu6ZL3Q7', electrical:'1LXWzf4qDRATSiXnfgy1gguOyR5qOYISY', procedures:'1iUSiN9lkyd-Cfl2eWtgfeOX8U42dE4fQ'},
+      'Paletiser':      {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace(' ','')},
+      'Retail':         {documentation:'1wVv6BzVnpgv7PDw7rPmSqFUCfp2RVo8d', works:'1_HXYuj17giRiwPIWE_AJqwYCOgCpAMBv', electrical:'1rvYAmcDNc-sKCnZlyQRXnqC3ujkhLiXl', procedures:'1BG_ajXL8jdBiwOGYoUncJazdOUnoWZS6'}
+    },
     'Other': {
-      'General': { documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS' }
+      'General':       {documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS'}
     }
   };
+
 
   /* Work History → Google Sheet mapping */
   const WORKS_SHEETS = {
     'Bakery 1': {
-      // primjer:
-      // 'Fritsch': { sheetId:'SHEET_ID', sheetName:'Work Histories', gid:'376639293' }
+      'Fritsch': {sheetId: '1Zbw2tdWHwtmGPmEbPB-zwCISkaU0uE9V', sheetName: 'Work Histories', gid: '376639293'},
+      'Mixing': { sheetId: '1sqLOozThUlEjMzonVPbdaScnSlCq36xP', sheetName: 'Work Histories', gid: '598593226' },
+      'Cooler': { sheetId: '1sqLOozThUlEjMzonVPbdaScnSlCq36xP', sheetName: 'Work Histories', gid: '598593226'},
+      'Freezer': {sheetId: '1XPuNPqiJOrGaiTkvZqPUKjo4t-ArcxrC', sheetName: 'Work Histories', gid: '1982828363'},
+      'Fermentation':{sheetID: '1-fqWwxyiBh2Bg2vURBYhvtN6hNeyub0a', sheetName:'Work Histories', gid: '240637548'},
+      'Oven' :{ sheetId: '1lv_wj7vUF0CPEDlG_AJy6pr07I_UgueB', sheetName:'Work Histories', gid: '1201491591'},
+      'Proover':{ sheetId: '1qcZkic09W3IVQIrciOPu8F3u3aRuAret', sheetName: 'Work Histories', gid: '629516588'},          
     },
-    'Bakery 2': {},
-    'Bakery 3': {}
+    'Bakery 2': {
+      'AHU' : {sheetId: '1Bav0okr_EOD_BUcYdTyg4ZLbtPXg0c6r', sheetName: 'Work Histories', gid: '1465343950'},
+      'Baggers': {sheetId: '1TDd3HN4VCdaIMVqrEqKSpP-hOIB1qF5G', sheetName: 'Work Histories', gid: '1866850271'},
+      'Cooler': {sheetId: '1UH2bXg2xNxeaLwBrgoJB0bLkHBrPw_G_', sheetName: 'Work Histories', gid: '590925651'},
+      'Fermentation' :{sheetId: '1KtRYBhlDtBiMfNoXZbH15RWEaXBPanB1', sheetName: 'Work Histories', gid: '1773358127'},
+      'Freezer' :{sheetId: '142g28ImYvkIISMY3tIxx9-HAc2HTsu4P', sheetName: 'Work Histories', gid: '1108561148'},
+      'Mixing' :{sheetId: '1cKkULO4w0NMgOm8xCWcJpgi2fnAEEAKf', sheetName: 'Work Histories', gid: '1291120270'},
+      'Oven' :{sheetId: '1ji5vmcbBJcOKlYg3lQ1tPAj-sDB-h_pF', sheetName: 'Work Histories', gid:'542344704'},
+      'Proover' :{sheetId: '1nSY7rnpL5jPbnwBkWflITI357lGYRJgJ', sheetName: 'Work Histories', gid: '580369016'},
+      'Rademaker' :{sheetId:'1SP_P1cBAmdS8JnCwXq2L8qH26SvFVJpB', sheetName: 'Work Histories', gid: '176625201'},
+      'Retarder' :{sheetId: '1qZQKz77AHlAonryimU-pUokwgFTReden', sheetName: 'Work Histories', gid: '1302414895'},
+      'Scarifier' :{sheetId: '1jmi0teTEGZBlvvu2L5aIg_GFcL6Xzq96', sheetName: 'Work Histories', gid:'525823593'},
+      'Spiro' :{sheetId: '1-t2YrC3Wwox1jpOcZo0Xxzs6NKdUALZK', sheetName: 'Work Histories', gid:'620703835'},  
+    },
+    'Bakery 3': {
+      'Site 2 Packing' :{sheetId: '19C1b-GwMOWAPFhqUx0lzwyuIbb9HkK81', sheetName: 'Work Histories', gid:'1461447237'},
+      'Site 1 Packing' :{sheetId: '1dqNSJjcg5YHry0P44y36IfUPt17776dZ', sheetName: 'Work Histories', gid:'1827174219'},
+      'Paletiser' :{sheetId: '1YYy_q1z1VTjvP8qAOlhitF17Q1GeOJpq', sheetName: 'Work Histories', gid:'1730089513'},
+      'Retail' :{sheetId: '1avLAoAiyHtCNOyYkUffT7iCWQ_N54yk2', sheetName: 'Work Histories', gid:'1258265858'},
+    }
   };
+
 
   const CATS = {
     documentation: { title:'Documentation',   color:'c1', desc:'User manuals & technical docs' },
