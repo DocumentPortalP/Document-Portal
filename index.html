@@ -640,7 +640,16 @@
 
     const allowSet = getOpAllowSet();
     const isDocOrProc = (catKey==='documentation' || catKey==='procedures');
-
+if (catKey === 'works') {
+  const sheetEntry = WORKS_SHEETS?.[b]?.[m];
+  if (sheetEntry && sheetEntry.sheetId) {
+    // load work history table view
+    refresh.style.display = 'none';
+    drawWorksSheetView(b, m, list).catch(e => { list.innerHTML = `<div class="small">Failed to load Work History: ${escapeHtml(e.message||String(e))}</div>`; });
+    adminBtn.onclick = async () => { try{ await ensureAuth(); adminBtn.style.display='none'; refreshHint(); openFolderBtn.style.display=''; }catch(e){ alert('Sign-in failed: ' + (e.message || String(e))); } };
+    return;
+  }
+}
     async function publicListFiles(){
       list.innerHTML='<div class="small">Loading…</div>';
       try{
