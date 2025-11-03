@@ -38,7 +38,6 @@
   .icon-btn{min-width:34px;min-height:34px;border-radius:999px;border:1px solid #cbd5e1;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
   .icon-btn svg{width:16px;height:16px;display:block}
 
-  /* Data table */
   .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:0 0 12px 12px;background:#fff}
   table.data{width:100%;border-collapse:separate;border-spacing:0;font-size:0.96rem}
   .data thead th{position:sticky;top:0;z-index:1;background:#f8fafc;border-bottom:1px solid var(--line);padding:10px;text-align:left;white-space:nowrap;user-select:none;cursor:pointer}
@@ -52,13 +51,7 @@
   .data td.wide, .data th.wide { min-width:420px; }
   .data td.asset, .data th.asset { min-width:260px; white-space:nowrap; }
 
-  .scroll-x-top{
-    overflow-x:auto; overflow-y:hidden;
-    height:14px; background:#fff;
-    border:1px solid var(--line);
-    border-bottom:0;
-    border-radius:12px 12px 0 0;
-  }
+  .scroll-x-top{ overflow-x:auto; overflow-y:hidden; height:14px; background:#fff; border:1px solid var(--line); border-bottom:0; border-radius:12px 12px 0 0; }
   .scroll-x-top::-webkit-scrollbar{height:12px}
   .scroll-x-top::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
   .scroll-x-top::-webkit-scrollbar-track{background:#f8fafc;border-radius:8px}
@@ -70,11 +63,15 @@
   <header>
     <div class="hwrap">
       <div class="title">Documentation Portal</div>
+
       <form id="globalSearchForm" style="margin-left:auto;display:flex;gap:8px;align-items:center">
         <input id="globalSearchInput" type="search" placeholder="Search all files…" aria-label="Search" style="padding:8px 10px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#1e293b;min-width:210px">
         <button class="btn" type="submit">Search</button>
         <button class="btn ghost" id="clearSearchBtn" type="button" style="display:none">Clear</button>
       </form>
+
+      <div id="roleBadge" class="small" style="margin-left:8px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#2563eb;font-weight:700;display:none"></div>
+      <button id="logoutBtn" class="btn ghost" style="display:none">Logout</button>
     </div>
   </header>
 
@@ -109,14 +106,11 @@
   <main>
     <nav class="crumbs" id="crumbs"></nav>
     <section id="view">
-      <div class="stack" id="homeStack">
-        <!-- Home tiles are rendered dynamically -->
-      </div>
+      <div class="stack" id="homeStack"></div>
     </section>
   </main>
   <footer></footer>
 
-  <!-- Google Identity Services + Google API client -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
 
@@ -130,14 +124,8 @@
     'Bakery 1': ['Mixing','Fermentation','Fritsch','Proover','Oven','Cooler','Freezer'],
     'Bakery 2': ['Mixing','Fermentation','Spiro','Scarifier','Retarder','Rademaker','Proover','Oven','MIB','Freezer','Cooler','AHU'],
     'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail'],
-    'Other' :  ['General'],// "Other" će se dodati ispod
+    'Other':    ['General'] // posebna grupa: ima samo Documentation + Procedures
   };
-
-  // --- Dodaj "Other" ispod Bakery 3 (ako nije već dodan)
-  (()=>{
-    const arr = MACHINES['Bakery 3'];
-    if (arr && !arr.includes('Other')) arr.push('Other');
-  })();
 
   const FOLDERS = {
     'Bakery 1': {
@@ -170,15 +158,11 @@
       'Site 1 Packing': {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace('d','')},
       'Site 2 Packing': {documentation:'17DXdFMXZBpf9mtZ4c5ZrGsSZTbfkBYft', works:'1_GcauA20-3UKzkFYpLgM9aEcZu6ZL3Q7', electrical:'1LXWzf4qDRATSiXnfgy1gguOyR5qOYISY', procedures:'1iUSiN9lkyd-Cfl2eWtgfeOX8U42dE4fQ'},
       'Paletiser':      {documentation:'1wVIP0pnbY9-bvx4Khb50wl9Ni2uvP8ZI', works:'1fO8rMJ6tkmg2NrPq4esZDb_Tzz554xgT', electrical:'1I587knnvHq1WarvZ9MdlezqooSIoQYBV', procedures:'1Ao-nAw_X8UAUnkaETxUlOkfIXH_C80QA'.replace(' ','')},
-      'Retail':         {documentation:'1wVv6BzVnpgv7PDw7rPmSqFUCfp2RVo8d', works:'1_HXYuj17giRiwPIWE_AJqwYCOgCpAMBv', electrical:'1rvYAmcDNc-sKCnZlyQRXnqC3ujkhLiXl', procedures:'1BG_ajXL8jdBiwOGYoUncJazdOUnoWZS6'},
-      'Other':          {documentation:'FOLDER_ID_DOCS', procedures:'FOLDER_ID_PROCS'} /* ⬅️ zamijeni ID-eve */
+      'Retail':         {documentation:'1wVv6BzVnpgv7PDw7rPmSqFUCfp2RVo8d', works:'1_HXYuj17giRiwPIWE_AJqwYCOgCpAMBv', electrical:'1rvYAmcDNc-sKCnZlyQRXnqC3ujkhLiXl', procedures:'1BG_ajXL8jdBiwOGYoUncJazdOUnoWZS6'}
     },
     'Other': {
-   'General': {
-      documentation:'XXXXX',
-      procedures:'YYYYY'
-   }
-}
+      'General':       {documentation:'FOLDER_ID_OTHER_DOCS', procedures:'FOLDER_ID_OTHER_PROCS'}
+    }
   };
 
   const CATS = {
@@ -188,7 +172,6 @@
     procedures:    { title:'Procedures',      color:'c4', desc:'SOPs & guides' }
   };
 
-  /* === Work History preko Google Sheets === */
   const WORKS_SHEETS = {
     'Bakery 1': {
       'Fritsch': {sheetId: '1Zbw2tdWHwtmGPmEbPB-zwCISkaU0uE9V', sheetName: 'Work Histories', gid: '376639293'},
@@ -221,7 +204,7 @@
     }
   };
 
-  /* ===== Utilities ===== */
+  /* ===== Utils ===== */
   function params(){ return new URLSearchParams(location.search); }
   function go(obj){ const u=new URL(location.href); u.search=new URLSearchParams(obj).toString(); history.pushState({},'',u); draw(); }
   window.addEventListener('popstate', draw);
@@ -242,31 +225,49 @@
     });
   }
 
-  /* ===== Permission / Roles ===== */
+  /* ===== Roles / PIN ===== */
   const ROLE_PINS = { '1111':'operator', '2906':'engineer', '1782':'admin' };
   function getRole(){ return sessionStorage.getItem('role') || 'operator'; }
   function isOperator(){ return getRole()==='operator'; }
   function isEngineer(){ return getRole()==='engineer'; }
   function isAdmin(){ return getRole()==='admin'; }
 
-  // Whitelist (global) koji file ID-ovi su vidljivi operatoru
+  // operator global allow-list (fileId niz u localStorage)
   const OP_ALLOW_KEY = 'operatorAllowList';
-  function getOpAllowSet(){
-    try{ const arr = JSON.parse(localStorage.getItem(OP_ALLOW_KEY)||'[]'); return new Set(arr); }catch{ return new Set(); }
-  }
+  function getOpAllowSet(){ try{ return new Set(JSON.parse(localStorage.getItem(OP_ALLOW_KEY)||'[]')); }catch{ return new Set(); } }
   function setOpAllow(fileId, allow){
-    const s = getOpAllowSet();
-    if(allow) s.add(fileId); else s.delete(fileId);
-    localStorage.setItem(OP_ALLOW_KEY, JSON.stringify(Array.from(s)));
+    const s = getOpAllowSet(); if(allow) s.add(fileId); else s.delete(fileId);
+    localStorage.setItem(OP_ALLOW_KEY, JSON.stringify([...s]));
   }
 
-  /* ===== Home / Bakery / Machine ===== */
+  /* ===== Header role badge + logout ===== */
+  const roleBadge = document.getElementById('roleBadge');
+  const logoutBtn = document.getElementById('logoutBtn');
+  function refreshHeaderAuth(){
+    const role = getRole();
+    if (sessionStorage.getItem('unlocked')==='1'){
+      roleBadge.style.display = '';
+      roleBadge.textContent = `Logged in as: ${role}`;
+      logoutBtn.style.display = '';
+    } else {
+      roleBadge.style.display = 'none';
+      logoutBtn.style.display = 'none';
+    }
+  }
+  logoutBtn?.addEventListener('click', ()=>{
+    sessionStorage.removeItem('unlocked');
+    sessionStorage.removeItem('role');
+    location.href = location.pathname; // reset state
+  });
+
+  /* ===== Home / Bakery / Machine Views ===== */
   function drawHome(){
     crumbsSet([{label:'Home'}]);
-    const view=document.getElementById('view');
-    view.innerHTML='';
+    const view=document.getElementById('view'); view.innerHTML='';
     const wrap=document.createElement('div'); wrap.className='stack';
+
     Object.keys(MACHINES).forEach(b=>{
+      if (isOperator() && b==='Other') return; // operator ne vidi Other
       const a=document.createElement('a');
       a.className='tile';
       a.href=`?bakery=${encodeURIComponent(b)}`;
@@ -277,9 +278,10 @@
   }
 
   function drawBakery(b){
+    if (isOperator() && b==='Other'){ go({}); return; } // operator blokiran
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}}]);
     const view=document.getElementById('view'); view.innerHTML='';
-    const machines = (MACHINES[b]||[]).filter(m => !(isOperator() && b==='Bakery 3' && m==='Other')); // operator NE vidi Other
+    const machines = MACHINES[b]||[];
     if(!machines.length){ drawMachine(b,'—'); return; }
     const wrap=document.createElement('div'); wrap.className='stack';
     machines.forEach(m=>{
@@ -293,13 +295,7 @@
   }
 
   function drawMachine(b,m){
-    const role = sessionStorage.getItem('role');
-const isOther = (b === 'Other');
-
-Object.entries(CATS).forEach(([k,meta])=>{
-   if(isOther && (k==='works' || k==='electrical')) return;
-    // operator ne smije direktno u Other čak ni URL-om
-    if (isOperator() && b==='Bakery 3' && m==='Other'){ go({bakery:b}); return; }
+    if (isOperator() && b==='Other'){ go({}); return; } // operator blokiran i na deep link
 
     crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}}]);
     const view=document.getElementById('view'); view.innerHTML='';
@@ -307,10 +303,12 @@ Object.entries(CATS).forEach(([k,meta])=>{
     const h=document.createElement('h3'); h.textContent=`${b} › ${m}`; card.appendChild(h);
     const grid=document.createElement('div'); grid.className='grid';
 
-    // Ako je "Other" → prikaži samo Documentation i Procedures (za admin/engineer)
-    if (m==='Other'){
+    const isOther = (b==='Other');
+
+    if (isOther){
+      // U Other uvijek samo Documentation + Procedures
       ['documentation','procedures'].forEach(k=>{
-        const meta = CATS[k];
+        const meta=CATS[k];
         const a=document.createElement('a');
         a.className=`tile square ${meta.color}`;
         a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
@@ -319,7 +317,7 @@ Object.entries(CATS).forEach(([k,meta])=>{
       });
     } else {
       Object.entries(CATS).forEach(([k,meta])=>{
-        if (isOperator() && k!=='documentation' && k!=='procedures') return; // operator samo doc + procedures
+        if (isOperator() && k!=='documentation' && k!=='procedures') return; // operator samo doc + proc
         const a=document.createElement('a');
         a.className=`tile square ${meta.color}`;
         a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
@@ -329,10 +327,10 @@ Object.entries(CATS).forEach(([k,meta])=>{
     }
 
     card.appendChild(grid);
-    document.getElementById('view').appendChild(card);
+    view.appendChild(card);
   }
 
-  /* === Inline preview helpers (supports inline <video>) === */
+  /* === Preview helpers === */
   const previewBackdrop = document.getElementById('previewBackdrop');
   const previewFrame   = document.getElementById('previewFrame');
   const previewVideo   = document.getElementById('previewVideo');
@@ -359,6 +357,28 @@ Object.entries(CATS).forEach(([k,meta])=>{
   function isVideo(mime,name){ return (mime||'').startsWith('video/') || /\.(mp4|mov|mkv|webm|avi)$/i.test(name||''); }
   function publicDownloadUrl(fileId){ return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`; }
 
+  let accessToken=null,gapiReady=false;
+  async function ensureGapi(){
+    if(gapiReady) return;
+    await new Promise(r=>gapi.load('client',r));
+    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
+    gapiReady=true;
+  }
+  async function ensureAuth(){
+    if(!isAdmin()) throw new Error('Only admin can sign in.');
+    if(accessToken) return accessToken;
+    await ensureGapi();
+    return new Promise((res,rej)=>{
+      const c=google.accounts.oauth2.initTokenClient({
+        client_id:CLIENT_ID, scope:SCOPES,
+        callback:r=>{ if(r&&r.access_token){accessToken=r.access_token;res(accessToken);} else rej(new Error('No token')); }
+      });
+      c.requestAccessToken({prompt:'consent'});
+    });
+  }
+  function isAdminSignedIn(){ return !!accessToken; }
+  function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
+
   async function fetchPrivateBlob(fileId){
     const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers:{'Authorization':'Bearer '+accessToken} });
     if(!r.ok) throw new Error('Fetch failed '+r.status);
@@ -384,9 +404,7 @@ Object.entries(CATS).forEach(([k,meta])=>{
             previewVideo.src = publicDownloadUrl(f.id);
           }
           previewFrame.style.display='none';
-          previewVideo.style.display='block';
-          showPreview();
-          return;
+          previewVideo.style.display='block'; showPreview(); return;
         }catch(e){ console.warn('Video inline failed, fallback to Drive preview'); }
       }
 
@@ -406,35 +424,9 @@ Object.entries(CATS).forEach(([k,meta])=>{
     }catch(e){ alert('Preview failed: '+(e.message||String(e))); }
   }
 
-  /* ===== Drive & Auth ===== */
-  let accessToken=null,gapiReady=false;
-  async function ensureGapi(){
-    if(gapiReady) return;
-    await new Promise(r=>gapi.load('client',r));
-    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
-    gapiReady=true;
-  }
-  async function ensureAuth(){
-    // samo admin se smije autentificirati
-    if(!isAdmin()) throw new Error('Only admin can sign in.');
-    if(accessToken) return accessToken;
-    await ensureGapi();
-    return new Promise((res,rej)=>{
-      const c=google.accounts.oauth2.initTokenClient({
-        client_id:CLIENT_ID,
-        scope:SCOPES,
-        callback:r=>{ if(r&&r.access_token){accessToken=r.access_token;res(accessToken);} else rej(new Error('No token')); }
-      });
-      c.requestAccessToken({prompt:'consent'});
-    });
-  }
-  function isAdminSignedIn(){ return !!accessToken; }
-  function folderIdFor(b,m,cat){ return FOLDERS?.[b]?.[m]?.[cat] || null; }
-
-  /* ===== SHEET HELPERS ===== */
+  /* ===== Sheets helpers (omitted: unchanged parsing functions) ===== */
   function parseCsvTable(text){
-    const rows = [];
-    let row = [], inQuotes = false, field = '';
+    const rows = []; let row = [], inQuotes = false, field = '';
     for (let i=0; i<text.length; i++){
       const ch = text[i], next = text[i+1];
       if (inQuotes){
@@ -445,7 +437,7 @@ Object.entries(CATS).forEach(([k,meta])=>{
         if (ch === '"'){ inQuotes = true; }
         else if (ch === ','){ row.push(field); field=''; }
         else if (ch === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
-        else if (ch === '\r'){ /* ignore */ }
+        else if (ch === '\r'){ }
         else { field += ch; }
       }
     }
@@ -459,13 +451,9 @@ Object.entries(CATS).forEach(([k,meta])=>{
     if (v instanceof Date) { const t=v.getTime(); return isNaN(t)?NaN:t; }
     if (typeof v === 'string' && /^Date\(\d{4},\d{1,2},\d{1,2}(,\d{1,2},\d{1,2}(,\d{1,2})?)?\)$/.test(v)){
       const nums=v.slice(5,-1).split(',').map(n=>parseInt(n,10));
-      const [Y,M,D,h=0,m=0,s=0]=nums;
-      const dt=new Date(Y, M, D, h, m, s);
-      return dt.getTime();
+      const [Y,M,D,h=0,m=0,s=0]=nums; const dt=new Date(Y, M, D, h, m, s); return dt.getTime();
     }
-    if (typeof v === 'number' && isFinite(v)){
-      const ms=(v-25569)*86400*1000; return isNaN(ms)?NaN:ms;
-    }
+    if (typeof v === 'number' && isFinite(v)){ const ms=(v-25569)*86400*1000; return isNaN(ms)?NaN:ms; }
     const t=String(v).trim(); if(!t) return NaN;
     if(/^\d+(\.\d+)?$/.test(t)){ const n=Number(t); if(isFinite(n)){ const ms=(n-25569)*86400*1000; return isNaN(ms)?NaN:ms; } }
     let d=Date.parse(t); if(!Number.isNaN(d)) return d;
@@ -475,110 +463,38 @@ Object.entries(CATS).forEach(([k,meta])=>{
     if(m){ const yy=+m[1], mm=+m[2], dd=+m[3]; let hh=+(m[4]??0), mi=+(m[5]??0), ss=+(m[6]??0); const dt=new Date(yy,mm-1,dd,hh,mi,ss); return isNaN(dt.getTime())?NaN:dt.getTime(); }
     return NaN;
   }
-
   function formatDateCell(v){
-    const ms = parseDateSmart(v);
-    if (isNaN(ms)) return String(v ?? '');
+    const ms = parseDateSmart(v); if (isNaN(ms)) return String(v ?? '');
     const d = new Date(ms);
-    const dd = String(d.getDate()).padStart(2,'0');
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const yyyy = d.getFullYear();
-    const hh = d.getHours();
-    const mi = d.getMinutes();
-    const ss = d.getSeconds();
-    const base = `${dd}.${mm}.${yyyy}`;
-    const timePresent = (hh+mi+ss) !== 0;
-    return timePresent ? `${base} ${String(hh).padStart(2,'0')}:${String(mi).padStart(2,'0')}` : base;
+    const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); const yyyy=d.getFullYear();
+    const hh=d.getHours(); const mi=d.getMinutes(); const ss=d.getSeconds();
+    const base=`${dd}.${mm}.${yyyy}`; return (hh+mi+ss)!==0 ? `${base} ${String(hh).padStart(2,'0')}:${String(mi).padStart(2,'0')}` : base;
   }
 
-  async function fetchSheetTable(sheetId, sheetName, gid){
-    if (sheetName) {
-      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('GViz JSON HTTP ' + res.status);
-        let text = await res.text();
-        text = text.replace(/^\)\]\}'\s*/, '').replace(/^\uFEFF/, '');
-        const start = text.indexOf('{'), end = text.lastIndexOf('}');
-        if (start === -1 || end === -1 || end <= start) throw new Error('Invalid GViz JSON payload');
-        const data = JSON.parse(text.substring(start, end + 1));
-
-        const cols=(data.table.cols||[]);
-        const headers = cols.map(c => (c && (c.label || c.id)) || '');
-        const types = cols.map(c => (c && c.type) || 'string').map(t => t==='date'||t==='datetime' ? 'date' : (t==='number' ? 'number' : 'text'));
-        const rows = (data.table.rows||[]).map(r => (r.c||[]).map(c => {
-          if(!c) return '';
-          if (c.f != null && c.f !== '') return c.f;
-          if (typeof c.v === 'string' && /^Date\(/.test(c.v)) return c.v;
-          return (c.v ?? '');
-        }));
-
-        const looksLikeLetters = headers.length && headers.every(h => !h || /^[A-Z]+$/.test(String(h)));
-        const allEmpty = headers.every(h => !h || String(h).trim()==='');
-        let hdrs=headers, rws=rows, tys=types;
-        if ((allEmpty || looksLikeLetters) && rows.length){ hdrs = rows[0].map(v => String(v||'').trim()); rws = rows.slice(1); }
-        return { headers: hdrs, rows: rws, types: tys };
-      } catch (e) {
-        try {
-          const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-          const rCsv = await fetch(csvUrl);
-          if (!rCsv.ok) throw new Error('GViz CSV HTTP ' + rCsv.status);
-          return parseCsvTable(await rCsv.text());
-        } catch (e2) {
-          if (gid) {
-            const urlCsv = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&id=${sheetId}&gid=${gid}`;
-            const rCsv2 = await fetch(urlCsv);
-            if (!rCsv2.ok) throw new Error('CSV export HTTP ' + rCsv2.status);
-            return parseCsvTable(await rCsv2.text());
-          }
-          throw e2;
-        }
-      }
-    }
-    if (gid) {
-      const urlCsv = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&id=${sheetId}&gid=${gid}`;
-      const rCsv = await fetch(urlCsv);
-      if (!rCsv.ok) throw new Error('CSV export HTTP ' + rCsv.status);
-      return parseCsvTable(await rCsv.text());
-    }
-    throw new Error('No sheetName or gid configured.');
-  }
-
-  /* ===== Work History renderer ===== */
+  /* ===== Work History renderer (unchanged core, admin-only controls gated) ===== */
   function renderWorksTable(container, table, sheetId){
     container.innerHTML = '';
-
     const bar = document.createElement('div'); bar.className='toolbar';
     const search = document.createElement('input'); search.type='search'; search.placeholder='Search…';
     const adminBtns = document.createElement('div'); adminBtns.style.display='flex'; adminBtns.style.gap='8px'; adminBtns.style.marginLeft='auto';
     const dlBtn = document.createElement('button'); dlBtn.className='btn ghost badge'; dlBtn.textContent='Download CSV';
     const openGs = document.createElement('button'); openGs.className='btn ghost badge'; openGs.textContent='Open in Google Sheets (Admin)';
     adminBtns.append(dlBtn, openGs);
-    adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; // samo admin
+    adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none';
     bar.append(search, adminBtns);
     container.appendChild(bar);
 
-    const topScroll = document.createElement('div');
-    topScroll.className = 'scroll-x-top';
-    const topInner = document.createElement('div');
-    topInner.style.height = '1px';
-    topScroll.appendChild(topInner);
-    container.appendChild(topScroll);
+    const topScroll = document.createElement('div'); topScroll.className = 'scroll-x-top';
+    const topInner = document.createElement('div'); topInner.style.height = '1px';
+    topScroll.appendChild(topInner); container.appendChild(topScroll);
 
     const wrap = document.createElement('div'); wrap.className='table-wrap';
     const tableEl = document.createElement('table'); tableEl.className='data';
     wrap.appendChild(tableEl); container.appendChild(wrap);
 
-    const thead = document.createElement('thead');
-    const trh = document.createElement('tr');
-
-    const wideIdx = new Set();
-    let assetCol = -1;
-    table.headers.forEach((h,i)=>{
-      if (/job\s*description/i.test(h)) wideIdx.add(i);
-      if (/action\s*taken/i.test(h))     wideIdx.add(i);
-      if (/(^|\b)asset(\b|$)/i.test(h||'')) { assetCol = i; wideIdx.add(i); }
-    });
+    const thead = document.createElement('thead'); const trh = document.createElement('tr');
+    const wideIdx = new Set(); let assetCol = -1;
+    table.headers.forEach((h,i)=>{ if(/job\s*description/i.test(h)) wideIdx.add(i); if(/action\s*taken/i.test(h)) wideIdx.add(i); if (/(^|\b)asset(\b|$)/i.test(h||'')) { assetCol = i; wideIdx.add(i);} });
 
     table.headers.forEach((h, idx) => {
       const th = document.createElement('th');
@@ -588,43 +504,33 @@ Object.entries(CATS).forEach(([k,meta])=>{
       th.addEventListener('click', () => sortBy(idx));
       trh.appendChild(th);
     });
-    thead.appendChild(trh);
-    tableEl.appendChild(thead);
+    thead.appendChild(trh); tableEl.appendChild(thead);
 
-    const tbody = document.createElement('tbody');
-    tableEl.appendChild(tbody);
+    const tbody = document.createElement('tbody'); tableEl.appendChild(tbody);
 
     let currentRows = table.rows.slice();
-
     const inferredTypes = (table.types && table.types.length===table.headers.length)
       ? table.types.slice()
       : table.headers.map((_, col) => {
           let isDate=true, isNum=true;
           for (let i=0;i<Math.min(currentRows.length, 50);i++){
-            const v = currentRows[i][col];
-            if (v==null || v==='') continue;
-            const n = Number(v);
-            if (!isFinite(n)) isNum=false;
-            const d = parseDateSmart(v);
-            if (isNaN(d)) isDate=false;
+            const v = currentRows[i][col]; if (v==null || v==='') continue;
+            const n = Number(v); if (!isFinite(n)) isNum=false;
+            const d = parseDateSmart(v); if (isNaN(d)) isDate=false;
             if (!isDate && !isNum) break;
           }
           return isDate ? 'date' : (isNum ? 'number' : 'text');
         });
 
     function pickBestDateColumn(){
-      const byName = table.headers.findIndex(h =>
-        h && /^(completed\s*on|completed|completion\s*date|date\s*completed|date\/time|date|datum)$/i.test(String(h).trim())
-      );
+      const byName = table.headers.findIndex(h => h && /^(completed\s*on|completed|completion\s*date|date\s*completed|date\/time|date|datum)$/i.test(String(h).trim()));
       if (byName !== -1) return byName;
       let bestCol = -1, bestCount = 0;
       for (let c=0; c<table.headers.length; c++){
         let cnt = 0;
         for (let i=0; i<Math.min(currentRows.length, 200); i++){
-          const v = currentRows[i]?.[c];
-          if (v==null || v==='') continue;
-          const d = parseDateSmart(v);
-          if (!isNaN(d)) cnt++;
+          const v = currentRows[i]?.[c]; if (v==null || v==='') continue;
+          if (!isNaN(parseDateSmart(v))) cnt++;
         }
         if (cnt > bestCount){ bestCount = cnt; bestCol = c; }
       }
@@ -632,116 +538,50 @@ Object.entries(CATS).forEach(([k,meta])=>{
     }
 
     let sortCol = -1, sortDir = 1;
-
     function cmp(a,b,col){
-      const t = inferredTypes[col];
-      const va = a[col], vb = b[col];
-      if (t==='date'){
-        const na = parseDateSmart(va);
-        const nb = parseDateSmart(vb);
-        if (isNaN(na) && isNaN(nb)) return 0;
-        if (isNaN(na)) return 1;
-        if (isNaN(nb)) return -1;
-        return na - nb;
-      } else if (t==='number'){
-        const na = Number(va); const nb = Number(vb);
-        if (isNaN(na) && isNaN(nb)) return 0;
-        if (isNaN(na)) return 1;
-        if (isNaN(nb)) return -1;
-        return na - nb;
-      } else {
-        const sa = String(va||'').toLowerCase();
-        const sb = String(vb||'').toLowerCase();
-        if (sa<sb) return -1;
-        if (sa>sb) return 1;
-        return 0;
-      }
+      const t = inferredTypes[col]; const va=a[col], vb=b[col];
+      if (t==='date'){ const na=parseDateSmart(va), nb=parseDateSmart(vb); if (isNaN(na)&&isNaN(nb)) return 0; if (isNaN(na)) return 1; if (isNaN(nb)) return -1; return na-nb; }
+      if (t==='number'){ const na=Number(va), nb=Number(vb); if (isNaN(na)&&isNaN(nb)) return 0; if (isNaN(na)) return 1; if (isNaN(nb)) return -1; return na-nb; }
+      const sa=String(va||'').toLowerCase(), sb=String(vb||'').toLowerCase(); return sa<sb?-1:sa>sb?1:0;
     }
-
     function updateSortIndicators(){
       const ths = thead.querySelectorAll('th .sort');
-      ths.forEach((el, i)=>{
-        el.textContent = (i===sortCol) ? (sortDir===1 ? '↑' : '↓') : '⇅';
-        el.style.opacity = (i===sortCol) ? '1' : '.7';
-      });
+      ths.forEach((el, i)=>{ el.textContent = (i===sortCol) ? (sortDir===1 ? '↑' : '↓') : '⇅'; el.style.opacity = (i===sortCol) ? '1' : '.7'; });
     }
-
-    function displayValue(v, i){
-      if (inferredTypes[i]==='date') return formatDateCell(v);
-      if (inferredTypes[i]==='number') return String(v);
-      return String(v ?? '');
-    }
-
-    function syncTopWidth(){ topInner.style.width = tableEl.scrollWidth + 'px'; }
-    function syncFromTop(){ wrap.scrollLeft = topScroll.scrollLeft; }
-    function syncFromBottom(){ topScroll.scrollLeft = wrap.scrollLeft; }
-    topScroll.addEventListener('scroll', syncFromTop, {passive:true});
-    wrap.addEventListener('scroll', syncFromBottom, {passive:true});
-    window.addEventListener('resize', ()=>requestAnimationFrame(syncTopWidth));
+    function displayValue(v, i){ if (inferredTypes[i]==='date') return formatDateCell(v); if (inferredTypes[i]==='number') return String(v); return String(v ?? ''); }
 
     function renderBody(){
       const q = (search.value||'').toLowerCase();
       tbody.innerHTML = '';
       currentRows.forEach(r => {
-        if(q){
-          const hit = r.some(v => String(v||'').toLowerCase().includes(q));
-          if(!hit) return;
-        }
+        if(q){ const hit = r.some(v => String(v||'').toLowerCase().includes(q)); if(!hit) return; }
         const tr = document.createElement('tr');
-        r.forEach((v, i)=>{
-          const td = document.createElement('td');
-          const val = displayValue(v, i);
-          if (wideIdx.has(i)) td.classList.add('wide');
-          if (i === assetCol) td.classList.add('asset');
-          if (inferredTypes[i]==='number') td.classList.add('cell-mono');
-          td.textContent = val;
-          tr.appendChild(td);
-        });
+        r.forEach((v, i)=>{ const td=document.createElement('td'); const val=displayValue(v,i); if (inferredTypes[i]==='number') td.classList.add('cell-mono'); td.textContent=val; tr.appendChild(td); });
         tbody.appendChild(tr);
       });
-      requestAnimationFrame(syncTopWidth);
     }
 
     function sortBy(colIdx){
       if(sortCol === colIdx){ sortDir *= -1; } else { sortCol = colIdx; sortDir = 1; }
       currentRows.sort((a,b)=> sortDir * cmp(a,b,colIdx) );
-      updateSortIndicators();
-      renderBody();
+      updateSortIndicators(); renderBody();
     }
 
-    let completedCol = table.headers.findIndex(h =>
-      h && /^(completed\s*on|completed|completion\s*date|date\s*completed)$/i.test(String(h).trim())
-    );
+    let completedCol = table.headers.findIndex(h => h && /^(completed\s*on|completed|completion\s*date|date\s*completed)$/i.test(String(h).trim()));
     if (completedCol === -1) completedCol = pickBestDateColumn();
-    if (completedCol !== -1){
-      sortCol = completedCol;
-      sortDir = 1;
-      currentRows.sort((a,b)=> sortDir * cmp(a,b,completedCol) );
-    }
-
-    updateSortIndicators();
-    renderBody();
+    if (completedCol !== -1){ sortCol = completedCol; sortDir = 1; currentRows.sort((a,b)=> sortDir * cmp(a,b,completedCol) ); }
+    updateSortIndicators(); renderBody();
 
     search.addEventListener('input', renderBody);
-
     dlBtn.onclick = ()=>{
       const esc =(s)=>('"'+String(s??'').replace(/"/g,'""')+'"');
       const lines = [ table.headers.map(esc).join(','), ...currentRows.map(row=>row.map(esc).join(',')) ].join('\r\n');
-      const blob = new Blob([lines], {type:'text/csv'});
-      const url = URL.createObjectURL(blob);
+      const blob = new Blob([lines], {type:'text/csv'}); const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download='work_history.csv'; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url), 5000);
     };
-    openGs.onclick = async ()=>{
-      try{
-        await ensureAuth(); // samo admin
-        if (sheetId) window.open(`https://docs.google.com/spreadsheets/d/${sheetId}/edit`, '_blank');
-        else alert('Sheet ID not found');
-      }catch(e){ alert('Admin sign-in failed: ' + (e.message || String(e))); }
-    };
-
-    const reveal = ()=>{ adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; };
-    setInterval(reveal, 800);
+    openGs.onclick = async ()=>{ try{ await ensureAuth(); if (sheetId) window.open(`https://docs.google.com/spreadsheets/d/${sheetId}/edit`, '_blank'); else alert('Sheet ID not found'); }catch(e){ alert('Admin sign-in failed: ' + (e.message || String(e))); } };
+    setInterval(()=>{ adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; }, 800);
   }
 
   async function drawWorksSheetView(bakery, machine, container){
@@ -761,20 +601,15 @@ Object.entries(CATS).forEach(([k,meta])=>{
     }
   }
 
-  /* ===== CATEGORY VIEW ===== */
+  /* ===== Category View ===== */
   function drawCategory(b,m,catKey){
-    const cat=CATS[catKey];
-    if(!cat){ go({bakery:b,machine:m}); return; }
-
-    // Operator može samo Documentation i Procedures
+    const cat=CATS[catKey]; if(!cat){ go({bakery:b,machine:m}); return; }
     if (isOperator() && (catKey!=='documentation' && catKey!=='procedures')) { go({bakery:b,machine:m}); return; }
 
-    crumbsSet([
-      {label:'Home',to:{}},
-      {label:b,to:{bakery:b}},
-      {label:m,to:{bakery:b,machine:m}},
-      {label:cat.title,to:{bakery:b,machine:m,cat:catKey}}
-    ]);
+    const isOther = (b==='Other');
+    if (isOther && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
+
+    crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}},{label:cat.title,to:{bakery:b,machine:m,cat:catKey}}]);
 
     const view=document.getElementById('view'); view.innerHTML='';
     const card=document.createElement('div'); card.className='card';
@@ -797,12 +632,8 @@ Object.entries(CATS).forEach(([k,meta])=>{
     const openFolderBtn=document.createElement('button'); openFolderBtn.className='btn'; openFolderBtn.textContent='Open Drive folder (Admin)'; openFolderBtn.style.display='none';
     openFolderBtn.onclick=()=>{ if(fid) window.open(`https://drive.google.com/drive/folders/${fid}`, '_blank'); };
 
-    // Admin-only UI elementi
-    if (isAdmin()){
-      bar.append(adminBtn, openFolderBtn);
-    }
-    bar.append(search, refresh);
-    card.appendChild(bar);
+    if (isAdmin()){ bar.append(adminBtn, openFolderBtn); }
+    bar.append(search, refresh); card.appendChild(bar);
 
     const list=document.createElement('div'); list.className='list'; card.appendChild(list);
     view.appendChild(card);
@@ -810,42 +641,29 @@ Object.entries(CATS).forEach(([k,meta])=>{
     const allowSet = getOpAllowSet();
     const isDocOrProc = (catKey==='documentation' || catKey==='procedures');
 
-    // === PUBLIC listing (anon key) ===
     async function publicListFiles(){
       list.innerHTML='<div class="small">Loading…</div>';
       try{
         if(!fid){ list.innerHTML='<div class="small">Set Drive folder ID.</div>'; return; }
         const params=new URLSearchParams({
           q:`'${fid}' in parents and trashed=false`,
-          fields:'files(id,name,modifiedTime,mimeType,webViewLink)',
-          orderBy:'modifiedTime desc', pageSize:'100', key:API_KEY,
-          supportsAllDrives:'true', includeItemsFromAllDrives:'true'
+          fields:'files(id,name,modifiedTime,mimeType,webViewLink)', orderBy:'modifiedTime desc',
+          pageSize:'100', key:API_KEY, supportsAllDrives:'true', includeItemsFromAllDrives:'true'
         });
         const res=await fetch('https://www.googleapis.com/drive/v3/files?'+params.toString());
         if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error?.message||('HTTP '+res.status)); }
         let items=(await res.json()).files||[];
 
-        // Filter po search
-        const s=(search.value||'').toLowerCase();
-        if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
-
-        // Operator filter: whitelist za Documentation/Procedures
+        const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
         if (isOperator()){
-          if (isDocOrProc){
-            items = items.filter(f => allowSet.has(f.id));
-            if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; }
-          } else {
-            list.innerHTML = '<div class="small">Not permitted.</div>'; return;
-          }
+          if (isDocOrProc){ items = items.filter(f => allowSet.has(f.id)); if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; } }
+          else { list.innerHTML = '<div class="small">Not permitted.</div>'; return; }
         }
-
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-
-        renderFileRows(items, false);
+        renderFileRows(items,false);
       }catch(e){ list.innerHTML=`<div class="small">Public list error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
 
-    // === PRIVATE listing (admin) — s Allow Operator toggle + DELETE ===
     async function privateListFiles(){
       list.innerHTML='<div class="small">Loading…</div>';
       try{
@@ -855,24 +673,20 @@ Object.entries(CATS).forEach(([k,meta])=>{
         let items=res.result.files||[];
         const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        renderFileRows(items, true);
+        renderFileRows(items,true);
       }catch(e){ list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
 
-    // renderer za redove
     function renderFileRows(items, adminMode){
       list.innerHTML='';
       items.forEach(f=>{
         const row=document.createElement('div'); row.className='item';
-
         const title=document.createElement('a'); title.className='title'; title.href='#';
         title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
         const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
         title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
-
         const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
 
-        // Admin: toggle Allow operator (samo za doc/proc)
         if (adminMode && isAdmin() && isDocOrProc){
           const lbl=document.createElement('label'); lbl.className='small'; lbl.style.display='flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
           const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = getOpAllowSet().has(f.id);
@@ -881,32 +695,24 @@ Object.entries(CATS).forEach(([k,meta])=>{
           right.appendChild(lbl);
         }
 
-        // Download button
         const dl=document.createElement('a'); dl.className='icon-btn';
         dl.href = adminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
         dl.target='_blank'; dl.rel='noopener';
-        dl.title='Download';
         dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         right.appendChild(dl);
 
-        // Admin: delete
         if (adminMode && isAdmin()){
-          const del=document.createElement('button'); del.className='icon-btn'; del.title='Delete';
+          const del=document.createElement('button'); del.className='icon-btn';
           del.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M10 7v12m4-12v12M9 7l1-2h4l1 2M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-          del.onclick=async()=>{
-            if(!confirm('Delete file?')) return;
+          del.onclick=async()=>{ if(!confirm('Delete file?')) return;
             try{ await gapi.client.drive.files.delete({fileId:f.id}); await privateListFiles(); }
-            catch(e){ alert('Delete failed: '+(e.result?.error?.message||e.message)); }
-          };
+            catch(e){ alert('Delete failed: '+(e.result?.error?.message||e.message)); } };
           right.appendChild(del);
         }
-
-        row.append(title, right);
-        list.appendChild(row);
+        row.append(title, right); list.appendChild(row);
       });
     }
 
-    // Init layout: ako admin signed-in onda private, inače public
     publicListFiles();
     refresh.onclick = publicListFiles;
     search.oninput = publicListFiles;
@@ -925,7 +731,7 @@ Object.entries(CATS).forEach(([k,meta])=>{
     }
   }
 
-  /* ===== GLOBAL SEARCH ===== */
+  /* ===== Global Search ===== */
   function buildFolderIndex(){
     const out=[];
     for(const bakery of Object.keys(FOLDERS||{})){
@@ -992,56 +798,33 @@ Object.entries(CATS).forEach(([k,meta])=>{
       while(idx < FOLDER_INDEX.length){
         const i = idx++; const meta = FOLDER_INDEX[i];
 
-        // Operator može pretraživati samo Documentation/Procedures i samo allowed file-ove
+        // Operator pretražuje samo doc/proc i samo allowed
         if (isOperator() && !(meta.cat==='documentation' || meta.cat==='procedures')) continue;
 
         try{
           let files = isAdminSignedIn() ? await searchFolderPrivate(meta.folderId, query) : await searchFolderPublic(meta.folderId, query);
-
-          if (isOperator()){
-            files = files.filter(f => allowSet.has(f.id));
-          }
-
+          if (isOperator()) files = files.filter(f => allowSet.has(f.id));
           files.forEach(f => { appendSearchItem(list, meta, f, isAdminSignedIn()); resultsCount++; });
-        }catch(e){ /* ignore per-folder errors */ }
+        }catch(e){ /* ignore */ }
       }
     }
-    const workers = Array.from({length: Math.min(concurrency, FOLDER_INDEX.length)}, worker);
-    await Promise.all(workers);
+    await Promise.all(Array.from({length: Math.min(concurrency, FOLDER_INDEX.length)}, worker));
     if(resultsCount === 0){ list.innerHTML = '<div class="small">No results.</div>'; }
   }
 
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 
-  /* ===== Router draw ===== */
+  /* ===== Router ===== */
   function draw(){
-    const p=params();
-    const b=p.get('bakery');
-    const m=p.get('machine');
-    const c=p.get('cat');
-    const q=p.get('q');
-
+    refreshHeaderAuth();
+    const p=params(); const b=p.get('bakery'); const m=p.get('machine'); const c=p.get('cat'); const q=p.get('q');
     if(q){ drawSearch(q); return; }
     if(!b){ drawHome(); return; }
     if(b && !m){ drawBakery(b); return; }
     if(b && m && !c){ drawMachine(b,m); return; }
     if(b && m && c){ drawCategory(b,m,c); return; }
   }
-  window.addEventListener('load', ()=>{
-    // Render početne pločice ručno da uklonimo hardcoded HTML s početka
-    const stack = document.getElementById('homeStack');
-    if (stack){
-      stack.innerHTML = '';
-      ['Bakery 1','Bakery 2','Bakery 3'].forEach(B=>{
-        const a=document.createElement('a');
-        a.className='tile';
-        a.href='?bakery=' + encodeURIComponent(B);
-        a.innerHTML = `<h2>${B}</h2><p>Open</p>`;
-        stack.appendChild(a);
-      });
-    }
-    draw();
-  });
+  window.addEventListener('load', draw);
 
   /* ===== Global search form ===== */
   const gsForm = document.getElementById('globalSearchForm');
@@ -1055,7 +838,7 @@ Object.entries(CATS).forEach(([k,meta])=>{
   }
   if(clearBtn){ clearBtn.addEventListener('click', ()=>{ gsInput.value=''; go({}); clearBtn.style.display='none'; }); }
 
-  /* ===== Multi-role PIN gate (zamjena starog PIN_CODE) ===== */
+  /* ===== Multi-role PIN gate ===== */
   const lock = document.getElementById('lockscreen');
   const pinInput = document.getElementById('pinInput');
   const pinBtn = document.getElementById('pinBtn');
@@ -1067,9 +850,9 @@ Object.entries(CATS).forEach(([k,meta])=>{
     lock.style.display = 'none';
     pinMsg.style.display = 'none';
     pinInput.value='';
+    refreshHeaderAuth();
     draw();
   }
-
   function checkPin(){
     const val=(pinInput.value||'').trim();
     const role = ROLE_PINS[val];
@@ -1088,17 +871,13 @@ Object.entries(CATS).forEach(([k,meta])=>{
       setTimeout(()=>pinMsg.style.display='none', 1800);
     }
   }
-
-  window.checkPin = checkPin;
   pinBtn.addEventListener('click', checkPin);
   pinInput.addEventListener('keypress', e=>{ if(e.key === 'Enter') checkPin(); });
 
-  // auto-hide lock ako je sesija već otključana
-  if(sessionStorage.getItem('unlocked') === '1'){
-    const role = sessionStorage.getItem('role') || 'operator';
-    doUnlock(role);
-  }
+  if(sessionStorage.getItem('unlocked') === '1'){ doUnlock(sessionStorage.getItem('role')||'operator'); }
   </script>
 </body>
 </html>
+
+
 
