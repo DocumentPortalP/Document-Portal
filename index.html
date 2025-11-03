@@ -69,6 +69,8 @@
         <button class="btn" type="submit">Search</button>
         <button class="btn ghost" id="clearSearchBtn" type="button" style="display:none">Clear</button>
       </form>
+      <div id="roleBadge" style="margin-left:20px;font-weight:700;color:#2563eb;"></div>
+<button id="logoutBtn" style="margin-left:10px;display:none;background:#fff;border:1px solid #2563eb;color:#2563eb;padding:6px 10px;border-radius:8px;cursor:pointer;">Logout</button>
 
       <div id="roleBadge" class="small" style="margin-left:8px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#2563eb;font-weight:700;display:none"></div>
       <button id="logoutBtn" class="btn ghost" style="display:none">Logout</button>
@@ -304,6 +306,7 @@
     const grid=document.createElement('div'); grid.className='grid';
 
     const isOther = (b==='Other');
+    
 
     if (isOther){
       // U Other uvijek samo Documentation + Procedures
@@ -880,6 +883,23 @@ if (catKey === 'works') {
       setTimeout(()=>pinMsg.style.display='none', 1800);
     }
   }
+    function updateRoleUI(){
+  const r = sessionStorage.getItem('role');
+  const badge = document.getElementById('roleBadge');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if(!r){
+    badge.textContent='';
+    logoutBtn.style.display='none';
+    return;
+  }
+  badge.textContent = r.toUpperCase();
+  logoutBtn.style.display='inline-block';
+}
+logoutBtn.onclick = ()=>{
+  sessionStorage.clear();
+  location.reload();
+};
+updateRoleUI();
   pinBtn.addEventListener('click', checkPin);
   pinInput.addEventListener('keypress', e=>{ if(e.key === 'Enter') checkPin(); });
 
