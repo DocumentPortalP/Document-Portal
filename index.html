@@ -375,7 +375,11 @@
 
   async function fetchSheetTable(sheetId, sheetName, gid){
     if (sheetName) {
-      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`Sheet fetch failed: ${res.status}`);
+  const text = await res.text();
+  return parseCsvTable(text);
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error('GViz JSON HTTP ' + res.status);
@@ -425,13 +429,7 @@
     }
     throw new Error('No sheetName or gid configured.');
   }
-async function fetchSheetTable(sheetId, sheetName, gid){
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error('Sheet fetch failed '+res.status);
-  const text = await res.text();
-  return parseCsvTable(text);
-}
+
   /* ===== Work History table renderer ===== */
   function renderWorksTable(container, table, sheetId){
     container.innerHTML = '';
