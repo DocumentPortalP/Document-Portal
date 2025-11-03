@@ -425,7 +425,13 @@
     }
     throw new Error('No sheetName or gid configured.');
   }
-
+async function fetchSheetTable(sheetId, sheetName, gid){
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Sheet fetch failed '+res.status);
+  const text = await res.text();
+  return parseCsvTable(text);
+}
   /* ===== Work History table renderer ===== */
   function renderWorksTable(container, table, sheetId){
     container.innerHTML = '';
@@ -617,7 +623,7 @@
     setInterval(()=>{ adminBtns.style.display = (isAdmin() && isAdminSignedIn()) ? 'flex' : 'none'; }, 800);
   }
 
-  function drawWorksSheetView(bakery, machine, container){
+  async function drawWorksSheetView(bakery, machine, container){
     const entry = WORKS_SHEETS?.[bakery]?.[machine];
     if(!entry || !entry.sheetId){
       container.innerHTML = '<div class="small">No Google Sheet configured for this machine. Showing Drive folder instead.</div>';
