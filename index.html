@@ -9,8 +9,8 @@
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:var(--ink)}
   header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);backdrop-filter:saturate(1.2) blur(4px)}
-  .hwrap{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;align-items:center;gap:10px}
-  .title{font-weight:800;letter-spacing:.2px}
+  .hwrap{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .title{font-weight:800;letter-spacing:.2px;flex:1 1 auto}
   main{max-width:1100px;margin:0 auto;padding:14px}
   .stack{display:flex;flex-direction:column;gap:10px}
   .tile{display:block;background:linear-gradient(135deg,#fff,#f8fafc);border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.06);padding:18px 16px;text-decoration:none;color:inherit}
@@ -52,17 +52,21 @@
   .data td.wide, .data th.wide { min-width:420px; }
   .data td.asset, .data th.asset { min-width:260px; white-space:nowrap; }
 
-  .scroll-x-top{
-    overflow-x:auto; overflow-y:hidden;
-    height:14px; background:#fff;
-    border:1px solid var(--line); border-bottom:0;
-    border-radius:12px 12px 0 0;
-  }
+  .scroll-x-top{overflow-x:auto;overflow-y:hidden;height:14px;background:#fff;border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;}
   .scroll-x-top::-webkit-scrollbar{height:12px}
   .scroll-x-top::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
   .scroll-x-top::-webkit-scrollbar-track{background:#f8fafc;border-radius:8px}
 
   footer{height:1px}
+
+  /* --- Responsive header fix --- */
+  @media (max-width:700px){
+    .hwrap{flex-direction:column;align-items:stretch;gap:6px}
+    #globalSearchForm{width:100%;order:2;justify-content:space-between}
+    #roleArea{width:100%;display:flex;justify-content:space-between;align-items:center;order:3}
+    #roleBadge{margin-left:0}
+    #logoutBtn{margin-left:auto}
+  }
 </style>
 </head>
 <body>
@@ -70,17 +74,19 @@
     <div class="hwrap">
       <div class="title">Documentation Portal</div>
 
-      <form id="globalSearchForm" style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <input id="globalSearchInput" type="search" placeholder="Search all files…" aria-label="Search" style="padding:8px 10px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#1e293b;min-width:210px">
+      <form id="globalSearchForm" style="margin-left:auto;display:flex;gap:8px;align-items:center;flex:1 1 100%;max-width:100%;">
+        <input id="globalSearchInput" type="search" placeholder="Search all files…" aria-label="Search" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#1e293b;min-width:180px">
         <button class="btn" type="submit">Search</button>
         <button class="btn ghost" id="clearSearchBtn" type="button" style="display:none">Clear</button>
       </form>
 
-      <div id="roleBadge" class="small" style="margin-left:8px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#2563eb;font-weight:700;display:none"></div>
-      <button id="logoutBtn" class="btn ghost" style="display:none">Logout</button>
+      <div id="roleArea" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;width:auto;">
+        <div id="roleBadge" class="small" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#2563eb;font-weight:700;display:none;white-space:nowrap"></div>
+        <button id="logoutBtn" class="btn ghost" style="display:none;white-space:nowrap;">Logout</button>
+      </div>
     </div>
   </header>
-
+  
   <!-- PIN lock -->
   <div id="lockscreen" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7fafc;z-index:9999;">
     <h2 style="margin-bottom:12px;font-family:Inter,sans-serif;color:#1e293b;">Enter Access Code</h2>
