@@ -1068,5 +1068,34 @@ const MACHINES = {
     doUnlock(sessionStorage.getItem('role')||'operator');
   }
   </script>
+  <script>
+/* Auto-sort all document lists A → Z */
+function sortAllLists() {
+  const lists = document.querySelectorAll(".list");
+
+  lists.forEach(list => {
+    const items = Array.from(list.querySelectorAll(".item"));
+
+    items.sort((a, b) => {
+      const textA = a.querySelector(".title")?.textContent.trim().toLowerCase() || "";
+      const textB = b.querySelector(".title")?.textContent.trim().toLowerCase() || "";
+      return textA.localeCompare(textB);
+    });
+
+    items.forEach(it => list.appendChild(it));
+  });
+}
+
+/* Sorting trigger: AFTER UI is drawn */
+const observer = new MutationObserver(() => {
+  sortAllLists();
+});
+
+observer.observe(document.getElementById("view"), {
+  childList: true,
+  subtree: true
+});
+</script>
+
 </body>
 </html>
