@@ -815,7 +815,7 @@ const MACHINES = {
         }
 
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-
+        items.sort((a, b) => a.name.localCompare(b.name));
         renderFileRows(items, false);
       }catch(e){ list.innerHTML=`<div class="small">Public list error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
@@ -829,6 +829,7 @@ const MACHINES = {
         let items=res.result.files||[];
         const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
         if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
+        items.sort((a,b) => a.name.localCompare(b.name));
         renderFileRows(items, true);
       }catch(e){ list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`; }
     }
