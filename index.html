@@ -67,6 +67,30 @@
     #roleBadge{margin-left:0}
     #logoutBtn{margin-left:auto}
   }
+
+  /* ===== Preview pinch-zoom (ONLY inside modal) ===== */
+  #previewViewport{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#fff;
+  }
+  #previewZoom{
+    position:absolute;
+    inset:0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+  /* Transparent layer to capture pinch/pan gestures */
+  #previewGestureLayer{
+    position:absolute;
+    inset:0;
+    background:transparent;
+    touch-action:none;            /* ključ za mobitel */
+    cursor: grab;
+  }
+  #previewGestureLayer:active{ cursor: grabbing; }
 </style>
 </head>
 <body>
@@ -108,9 +132,17 @@
       <div id="wm" style="position:absolute;inset:0;pointer-events:none;display:none;align-items:center;justify-content:center;z-index:2">
         <div style="transform:rotate(-25deg);font-weight:800;font-size:48px;color:#0f172a12">CONFIDENTIAL — Documentation Portal</div>
       </div>
+
+      <!-- UPDATED PREVIEW BODY: adds zoom/pinch layer only inside modal -->
       <div id="previewBody" style="width:100%;height:calc(100% - 46px);background:#fff">
-        <iframe id="previewFrame" style="width:100%;height:100%;border:0;display:block"></iframe>
-        <video id="previewVideo" style="display:none;width:100%;height:100%" controls playsinline></video>
+        <div id="previewViewport">
+          <div id="previewZoom">
+            <iframe id="previewFrame" style="width:100%;height:100%;border:0;display:block"></iframe>
+            <video id="previewVideo" style="display:none;width:100%;height:100%" controls playsinline></video>
+          </div>
+          <!-- layer that captures pinch/pan ONLY in this window -->
+          <div id="previewGestureLayer" aria-hidden="true"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -135,11 +167,11 @@
   const SCOPES    = 'https://www.googleapis.com/auth/drive';
 
   /* ===== Structure ===== */
-const MACHINES = {
+  const MACHINES = {
     'Bakery 1': ['Mixing','Fermentation','Fritsch','Proover','Oven','Cooler','Freezer', 'Bar Marker'],
     'Bakery 2': ['Mixing','Fermentation','Spiro','Scarifier','Retarder','Rademaker','Proover','Oven','MIB','Freezer','Cooler','AHU'],
     'Bakery 3': ['Site 1 Packing','Site 2 Packing','Paletiser','Retail'],
-    'Other':    ['General'] // posebna grupa: ima samo Documentation + Procedures
+    'Other':    ['General']
   };
 
   const FOLDERS = {
@@ -181,7 +213,6 @@ const MACHINES = {
     }
   };
 
-
   /* Work History → Google Sheet mapping */
   const WORKS_SHEETS = {
     'Bakery 1': {
@@ -214,7 +245,6 @@ const MACHINES = {
       'Retail' :{sheetId: '1avLAoAiyHtCNOyYkUffT7iCWQ_N54yk2', sheetName: 'Work Histories', gid:'1258265858'},
     }
   };
-
 
   const CATS = {
     documentation: { title:'Documentation',   color:'c1', desc:'User manuals & technical docs' },
@@ -317,9 +347,168 @@ const MACHINES = {
   const previewDownload= document.getElementById('previewDownload');
   const wmEl           = document.getElementById('wm');
 
-  function showPreview(){ previewBackdrop.style.display = 'block'; }
+  /* ===== Preview pinch-zoom refs ===== */
+  const previewViewport = document.getElementById('previewViewport');
+  const previewZoomEl   = document.getElementById('previewZoom');
+  const gestureLayer    = document.getElementById('previewGestureLayer');
+
+  function setGestureEnabled(on){
+    if (!gestureLayer) return;
+    gestureLayer.style.display = on ? 'block' : 'none';
+  }
+
+  /******** PREVIEW PINCH-ZOOM (mobile) + trackpad pinch (desktop) ********/
+  let pzScale = 1;
+  let pzTx = 0, pzTy = 0;
+
+  const PZ_MIN = 1;   // min zoom
+  const PZ_MAX = 5;   // max zoom
+
+  const pointers = new Map();
+  let pinchStartDist = 0;
+  let pinchStartScale = 1;
+  let pinchStartTx = 0, pinchStartTy = 0;
+  let pinchWorldX = 0, pinchWorldY = 0;
+
+  let panLastX = 0, panLastY = 0;
+
+  function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+
+  function clampPan(){
+    if (!previewViewport) return;
+    const vw = previewViewport.clientWidth;
+    const vh = previewViewport.clientHeight;
+
+    const scaledW = vw * pzScale;
+    const scaledH = vh * pzScale;
+
+    if (scaledW <= vw) pzTx = (vw - scaledW) / 2;
+    else pzTx = clamp(pzTx, vw - scaledW, 0);
+
+    if (scaledH <= vh) pzTy = (vh - scaledH) / 2;
+    else pzTy = clamp(pzTy, vh - scaledH, 0);
+  }
+
+  function applyPZ(){
+    pzScale = clamp(pzScale, PZ_MIN, PZ_MAX);
+    clampPan();
+    if (previewZoomEl) previewZoomEl.style.transform = `translate(${pzTx}px, ${pzTy}px) scale(${pzScale})`;
+  }
+
+  function resetPZ(){
+    pzScale = 1;
+    pzTx = 0; pzTy = 0;
+    applyPZ();
+  }
+
+  // Attach listeners once
+  if (gestureLayer){
+    gestureLayer.addEventListener('pointerdown', (e)=>{
+      gestureLayer.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointers.size === 1){
+        panLastX = e.clientX;
+        panLastY = e.clientY;
+      }
+
+      if (pointers.size === 2){
+        const [a,b] = [...pointers.values()];
+        pinchStartDist = Math.hypot(a.x-b.x, a.y-b.y);
+        pinchStartScale = pzScale;
+        pinchStartTx = pzTx; pinchStartTy = pzTy;
+
+        const rect = previewViewport.getBoundingClientRect();
+        const cx = ((a.x + b.x) / 2) - rect.left;
+        const cy = ((a.y + b.y) / 2) - rect.top;
+
+        pinchWorldX = (cx - pinchStartTx) / pinchStartScale;
+        pinchWorldY = (cy - pinchStartTy) / pinchStartScale;
+      }
+    });
+
+    gestureLayer.addEventListener('pointermove', (e)=>{
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      const rect = previewViewport.getBoundingClientRect();
+
+      if (pointers.size === 2){
+        const [a,b] = [...pointers.values()];
+        const dist = Math.hypot(a.x-b.x, a.y-b.y);
+        if (pinchStartDist > 0){
+          const cx = ((a.x + b.x) / 2) - rect.left;
+          const cy = ((a.y + b.y) / 2) - rect.top;
+
+          pzScale = pinchStartScale * (dist / pinchStartDist);
+
+          pzTx = cx - pinchWorldX * pzScale;
+          pzTy = cy - pinchWorldY * pzScale;
+
+          applyPZ();
+        }
+        return;
+      }
+
+      // pan only if zoomed in
+      if (pointers.size === 1 && pzScale > 1){
+        const dx = e.clientX - panLastX;
+        const dy = e.clientY - panLastY;
+        panLastX = e.clientX;
+        panLastY = e.clientY;
+
+        pzTx += dx;
+        pzTy += dy;
+        applyPZ();
+      }
+    });
+
+    function endPointer(e){
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinchStartDist = 0;
+    }
+    gestureLayer.addEventListener('pointerup', endPointer);
+    gestureLayer.addEventListener('pointercancel', endPointer);
+    gestureLayer.addEventListener('pointerleave', endPointer);
+
+    // Trackpad pinch (Chrome/Edge): Ctrl + wheel
+    gestureLayer.addEventListener('wheel', (e)=>{
+      if (!e.ctrlKey) return;
+      e.preventDefault(); // stop page zoom
+      const rect = previewViewport.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+
+      const wx = (cx - pzTx) / pzScale;
+      const wy = (cy - pzTy) / pzScale;
+
+      const factor = Math.exp(-e.deltaY * 0.002);
+      pzScale *= factor;
+
+      pzTx = cx - wx * pzScale;
+      pzTy = cy - wy * pzScale;
+
+      applyPZ();
+    }, { passive:false });
+
+    // Double tap/click to reset
+    let lastTap = 0;
+    gestureLayer.addEventListener('click', ()=>{
+      const now = Date.now();
+      if (now - lastTap < 280) resetPZ();
+      lastTap = now;
+    });
+  }
+
+  function showPreview(){
+    resetPZ();
+    previewBackdrop.style.display = 'block';
+  }
   function hidePreview(){
+    resetPZ();
     previewBackdrop.style.display = 'none';
+    setGestureEnabled(true); // default back on
+
     try{ if(previewFrame.dataset.blobUrl){ URL.revokeObjectURL(previewFrame.dataset.blobUrl); previewFrame.dataset.blobUrl=''; } }catch{}
     try{ if(previewVideo.dataset.blobUrl){ URL.revokeObjectURL(previewVideo.dataset.blobUrl); previewVideo.dataset.blobUrl=''; } }catch{}
     previewFrame.src = 'about:blank';
@@ -342,7 +531,13 @@ const MACHINES = {
       const showWm = new URLSearchParams(location.search).get('wm')==='1';
       wmEl.style.display = showWm ? 'flex' : 'none';
 
+      // Default: enable gestures for iframe/pdf/image
+      setGestureEnabled(true);
+      resetPZ();
+
       if (isVideo(f.mimeType, f.name)){
+        // For video: disable gesture overlay so controls work
+        setGestureEnabled(false);
         try{
           if(isAdminMode){
             const blob = await fetchPrivateBlob(f.id);
@@ -354,7 +549,8 @@ const MACHINES = {
           }
           previewFrame.style.display='none';
           previewVideo.style.display='block';
-          showPreview(); return;
+          showPreview(); 
+          return;
         }catch(e){ console.warn('Video inline failed, fallback to Drive preview'); }
       }
 
@@ -364,10 +560,18 @@ const MACHINES = {
             const blob = await fetchPrivateBlob(f.id);
             const url = URL.createObjectURL(blob);
             previewFrame.dataset.blobUrl = url;
-            previewFrame.src = url; showPreview(); return;
+            previewFrame.src = url; 
+            previewVideo.style.display='none';
+            previewFrame.style.display='block';
+            showPreview(); 
+            return;
           }catch(e){ console.warn('Blob preview failed, fallback to Drive preview'); }
         }
-        previewFrame.src = previewUrl; showPreview(); return;
+        previewFrame.src = previewUrl; 
+        previewVideo.style.display='none';
+        previewFrame.style.display='block';
+        showPreview(); 
+        return;
       }
 
       window.open(f.webViewLink || `https://drive.google.com/file/d/${f.id}/view`, '_blank');
@@ -841,7 +1045,7 @@ const MACHINES = {
 
         const title=document.createElement('a'); title.className='title'; title.href='#';
         title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
-        const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():''; 
+        const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
         title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
 
         const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
@@ -901,14 +1105,12 @@ const MACHINES = {
       sheetWrap.style.marginTop='12px';
       sheetWrap.innerHTML = '<div class="small">Loading Work History…</div>';
       view.insertBefore(sheetWrap, card);
-      // *** NEMA await ovdje (ovo je popravak) ***
       drawWorksSheetView(b,m,sheetWrap).then(loaded=>{
         if (loaded!==null){
-    // ako sheet postoji, sakrij DIR listing (card) kompletno
-    card.style.display = 'none';
-  } else {
-    sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
-  }
+          card.style.display = 'none';
+        } else {
+          sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
+        }
       });
     }
   }
@@ -1070,5 +1272,8 @@ const MACHINES = {
     doUnlock(sessionStorage.getItem('role')||'operator');
   }
   </script>
+</body>
+</html>
+
 </body>
 </html>
