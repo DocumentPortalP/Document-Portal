@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <title>Documentation Portal</title>
 <style>
   :root{ --bg:#f7fafc; --ink:#0f172a; --muted:#64748b; --card:#ffffff; --brand:#2563eb; --line:#e2e8f0; --zebra:#f8fafc; --hover:#eef2ff; }
@@ -67,30 +67,6 @@
     #roleBadge{margin-left:0}
     #logoutBtn{margin-left:auto}
   }
-
-  /* ===== Preview pinch-zoom (ONLY inside modal) ===== */
-  #previewViewport{
-    position:relative;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#fff;
-  }
-  #previewZoom{
-    position:absolute;
-    inset:0;
-    transform-origin: 0 0;
-    will-change: transform;
-  }
-  /* Transparent layer to capture pinch/pan gestures */
-  #previewGestureLayer{
-    position:absolute;
-    inset:0;
-    background:transparent;
-    touch-action:none;            /* ključ za mobitel */
-    cursor: grab;
-  }
-  #previewGestureLayer:active{ cursor: grabbing; }
 </style>
 </head>
 <body>
@@ -133,16 +109,10 @@
         <div style="transform:rotate(-25deg);font-weight:800;font-size:48px;color:#0f172a12">CONFIDENTIAL — Documentation Portal</div>
       </div>
 
-      <!-- UPDATED PREVIEW BODY: adds zoom/pinch layer only inside modal -->
+      <!-- PREVIEW BODY (no overlay -> scroll works; pinch via viewport toggle while modal open) -->
       <div id="previewBody" style="width:100%;height:calc(100% - 46px);background:#fff">
-        <div id="previewViewport">
-          <div id="previewZoom">
-            <iframe id="previewFrame" style="width:100%;height:100%;border:0;display:block"></iframe>
-            <video id="previewVideo" style="display:none;width:100%;height:100%" controls playsinline></video>
-          </div>
-          <!-- layer that captures pinch/pan ONLY in this window -->
-          <div id="previewGestureLayer" aria-hidden="true"></div>
-        </div>
+        <iframe id="previewFrame" style="width:100%;height:100%;border:0;display:block"></iframe>
+        <video id="previewVideo" style="display:none;width:100%;height:100%" controls playsinline></video>
       </div>
     </div>
   </div>
@@ -347,167 +317,25 @@
   const previewDownload= document.getElementById('previewDownload');
   const wmEl           = document.getElementById('wm');
 
-  /* ===== Preview pinch-zoom refs ===== */
-  const previewViewport = document.getElementById('previewViewport');
-  const previewZoomEl   = document.getElementById('previewZoom');
-  const gestureLayer    = document.getElementById('previewGestureLayer');
-
-  function setGestureEnabled(on){
-    if (!gestureLayer) return;
-    gestureLayer.style.display = on ? 'block' : 'none';
-  }
-
-  /******** PREVIEW PINCH-ZOOM (mobile) + trackpad pinch (desktop) ********/
-  let pzScale = 1;
-  let pzTx = 0, pzTy = 0;
-
-  const PZ_MIN = 1;   // min zoom
-  const PZ_MAX = 5;   // max zoom
-
-  const pointers = new Map();
-  let pinchStartDist = 0;
-  let pinchStartScale = 1;
-  let pinchStartTx = 0, pinchStartTy = 0;
-  let pinchWorldX = 0, pinchWorldY = 0;
-
-  let panLastX = 0, panLastY = 0;
-
-  function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
-
-  function clampPan(){
-    if (!previewViewport) return;
-    const vw = previewViewport.clientWidth;
-    const vh = previewViewport.clientHeight;
-
-    const scaledW = vw * pzScale;
-    const scaledH = vh * pzScale;
-
-    if (scaledW <= vw) pzTx = (vw - scaledW) / 2;
-    else pzTx = clamp(pzTx, vw - scaledW, 0);
-
-    if (scaledH <= vh) pzTy = (vh - scaledH) / 2;
-    else pzTy = clamp(pzTy, vh - scaledH, 0);
-  }
-
-  function applyPZ(){
-    pzScale = clamp(pzScale, PZ_MIN, PZ_MAX);
-    clampPan();
-    if (previewZoomEl) previewZoomEl.style.transform = `translate(${pzTx}px, ${pzTy}px) scale(${pzScale})`;
-  }
-
-  function resetPZ(){
-    pzScale = 1;
-    pzTx = 0; pzTy = 0;
-    applyPZ();
-  }
-
-  // Attach listeners once
-  if (gestureLayer){
-    gestureLayer.addEventListener('pointerdown', (e)=>{
-      gestureLayer.setPointerCapture(e.pointerId);
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      if (pointers.size === 1){
-        panLastX = e.clientX;
-        panLastY = e.clientY;
-      }
-
-      if (pointers.size === 2){
-        const [a,b] = [...pointers.values()];
-        pinchStartDist = Math.hypot(a.x-b.x, a.y-b.y);
-        pinchStartScale = pzScale;
-        pinchStartTx = pzTx; pinchStartTy = pzTy;
-
-        const rect = previewViewport.getBoundingClientRect();
-        const cx = ((a.x + b.x) / 2) - rect.left;
-        const cy = ((a.y + b.y) / 2) - rect.top;
-
-        pinchWorldX = (cx - pinchStartTx) / pinchStartScale;
-        pinchWorldY = (cy - pinchStartTy) / pinchStartScale;
-      }
-    });
-
-    gestureLayer.addEventListener('pointermove', (e)=>{
-      if (!pointers.has(e.pointerId)) return;
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      const rect = previewViewport.getBoundingClientRect();
-
-      if (pointers.size === 2){
-        const [a,b] = [...pointers.values()];
-        const dist = Math.hypot(a.x-b.x, a.y-b.y);
-        if (pinchStartDist > 0){
-          const cx = ((a.x + b.x) / 2) - rect.left;
-          const cy = ((a.y + b.y) / 2) - rect.top;
-
-          pzScale = pinchStartScale * (dist / pinchStartDist);
-
-          pzTx = cx - pinchWorldX * pzScale;
-          pzTy = cy - pinchWorldY * pzScale;
-
-          applyPZ();
-        }
-        return;
-      }
-
-      // pan only if zoomed in
-      if (pointers.size === 1 && pzScale > 1){
-        const dx = e.clientX - panLastX;
-        const dy = e.clientY - panLastY;
-        panLastX = e.clientX;
-        panLastY = e.clientY;
-
-        pzTx += dx;
-        pzTy += dy;
-        applyPZ();
-      }
-    });
-
-    function endPointer(e){
-      pointers.delete(e.pointerId);
-      if (pointers.size < 2) pinchStartDist = 0;
+  // Allow pinch-zoom ONLY while modal is open
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  const viewportOriginal = viewportMeta ? (viewportMeta.getAttribute('content') || '') : '';
+  function setPreviewZoomEnabled(on){
+    if(!viewportMeta) return;
+    if(on){
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes');
+    } else {
+      viewportMeta.setAttribute('content', viewportOriginal || 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no');
     }
-    gestureLayer.addEventListener('pointerup', endPointer);
-    gestureLayer.addEventListener('pointercancel', endPointer);
-    gestureLayer.addEventListener('pointerleave', endPointer);
-
-    // Trackpad pinch (Chrome/Edge): Ctrl + wheel
-    gestureLayer.addEventListener('wheel', (e)=>{
-      if (!e.ctrlKey) return;
-      e.preventDefault(); // stop page zoom
-      const rect = previewViewport.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-
-      const wx = (cx - pzTx) / pzScale;
-      const wy = (cy - pzTy) / pzScale;
-
-      const factor = Math.exp(-e.deltaY * 0.002);
-      pzScale *= factor;
-
-      pzTx = cx - wx * pzScale;
-      pzTy = cy - wy * pzScale;
-
-      applyPZ();
-    }, { passive:false });
-
-    // Double tap/click to reset
-    let lastTap = 0;
-    gestureLayer.addEventListener('click', ()=>{
-      const now = Date.now();
-      if (now - lastTap < 280) resetPZ();
-      lastTap = now;
-    });
   }
 
   function showPreview(){
-    resetPZ();
+    setPreviewZoomEnabled(true);
     previewBackdrop.style.display = 'block';
   }
   function hidePreview(){
-    resetPZ();
+    setPreviewZoomEnabled(false);
     previewBackdrop.style.display = 'none';
-    setGestureEnabled(true); // default back on
 
     try{ if(previewFrame.dataset.blobUrl){ URL.revokeObjectURL(previewFrame.dataset.blobUrl); previewFrame.dataset.blobUrl=''; } }catch{}
     try{ if(previewVideo.dataset.blobUrl){ URL.revokeObjectURL(previewVideo.dataset.blobUrl); previewVideo.dataset.blobUrl=''; } }catch{}
@@ -531,13 +359,7 @@
       const showWm = new URLSearchParams(location.search).get('wm')==='1';
       wmEl.style.display = showWm ? 'flex' : 'none';
 
-      // Default: enable gestures for iframe/pdf/image
-      setGestureEnabled(true);
-      resetPZ();
-
       if (isVideo(f.mimeType, f.name)){
-        // For video: disable gesture overlay so controls work
-        setGestureEnabled(false);
         try{
           if(isAdminMode){
             const blob = await fetchPrivateBlob(f.id);
@@ -895,7 +717,7 @@
     const wrap=document.createElement('div'); wrap.className='stack';
 
     ['Bakery 1','Bakery 2','Bakery 3','Other'].forEach(b=>{
-      if (isOperator() && b==='Other') return; // operator ne vidi Other
+      if (isOperator() && b==='Other') return;
       const a=document.createElement('a');
       a.className='tile';
       a.href=`?bakery=${encodeURIComponent(b)}`;
@@ -942,7 +764,7 @@
       });
     } else {
       Object.entries(CATS).forEach(([k,meta])=>{
-        if (isOperator() && (k==='works' || k==='electrical')) return; // operator ne vidi ova dva
+        if (isOperator() && (k==='works' || k==='electrical')) return;
         const a=document.createElement('a');
         a.className=`tile square ${meta.color}`;
         a.href=`?bakery=${encodeURIComponent(b)}&machine=${encodeURIComponent(m)}&cat=${encodeURIComponent(k)}`;
@@ -1097,9 +919,8 @@
       };
     }
 
-    // Ako je kategorija Work History, pokušaj nacrtati tablicu iz Sheeta iznad liste
     if (catKey==='works'){
-      if (isOperator()){ go({bakery:b,machine:m}); return; } // zaštita
+      if (isOperator()){ go({bakery:b,machine:m}); return; }
       const sheetWrap = document.createElement('div');
       sheetWrap.className='card';
       sheetWrap.style.marginTop='12px';
@@ -1141,7 +962,7 @@
   }
   async function searchFolderPrivate(folderId, query){
     const q = `'${folderId}' in parents and trashed=false and name contains '${escapeQueryForDrive(query)}'`;
-    const res = await gapi.client.drive.files.list({ q, fields:'files(id,name,modifiedTime,mimeType,webViewLink,parents)', orderBy:'modifiedTime desc', pageSize:50, supportsAllDrives:true, includeItemsFromAllDrives:true });
+    const res=await gapi.client.drive.files.list({ q, fields:'files(id,name,modifiedTime,mimeType,webViewLink,parents)', orderBy:'modifiedTime desc', pageSize:50, supportsAllDrives:true, includeItemsFromAllDrives:true });
     return res.result.files || [];
   }
 
@@ -1275,5 +1096,3 @@
 </body>
 </html>
 
-</body>
-</html>
