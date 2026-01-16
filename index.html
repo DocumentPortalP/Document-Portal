@@ -900,6 +900,127 @@
         list.appendChild(row);
       });
     }
+/* ===== Rademaker → Documentation → Part List navigation ===== */
+
+const urlParams = new URLSearchParams(location.search);
+const folderOverride = urlParams.get('folder');
+const currentFolderId = folderOverride || fid;
+
+// container for folder tiles
+const foldersWrap = document.createElement('div');
+foldersWrap.className = 'grid';
+foldersWrap.style.margin = '10px 0';
+card.insertBefore(foldersWrap, list);
+
+function renderFolderTiles(folders){
+  foldersWrap.innerHTML = '';
+  if(!folders || !folders.length) return;
+
+  folders.forEach(f=>{
+    const a = document.createElement('a');
+    a.className = 'tile square c2';
+    a.href =
+      `?bakery=${encodeURIComponent(b)}` +
+      `&machine=${encodeURIComponent(m)}` +
+      `&cat=${encodeURIComponent(catKey)}` +
+      `&folder=${encodeURIComponent(f.id)}`;
+    a.innerHTML = `<h2>${escapeHtml(f.name)}</h2><p>Open folder</p>`;
+    foldersWrap.appendChild(a);
+  });
+}
+
+async function listFoldersPublic(parentId){
+  const q = `'${parentId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+  const p = new URLSearchParams({
+    q,
+    fields:'files(id,name)',
+    orderBy:'name',
+    pageSize:'200',
+    key:API_KEY,
+    supportsAllDrives:'true',
+    includeItemsFromAllDrives:'true'
+  });
+  const r = await fetch('https://www.googleapis.com/drive/v3/files?' + p.toString());
+  if(!r.ok) return [];
+  return (await r.json()).files || [];
+}
+
+async function listFoldersPrivate(parentId){
+  const q = `'${parentId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+  const r = await gapi.client.drive.files.list({
+    q,
+    fields:'files(id,name)',
+    orderBy:'name',
+    pageSize:200,
+    supportsAllDrives:true,
+    includeItemsFromAllDrives:true
+  });
+  return r.result.files || [];
+}
+
+function isRademakerDocsRoot(){
+  return (
+    b === 'Bakery 2' &&
+    m === 'Rademaker' &&
+    catKey === 'documentation' &&
+    !folderOverride
+  );
+}
+
+/* --- override publicListFiles --- */
+const _publicListFiles = publicListFiles;
+publicListFiles = async function(){
+  list.innerHTML = '<div class="small">Loading…</div>';
+  try{
+    const folders = await listFoldersPublic(currentFolderId);
+
+    if (isRademakerDocsRoot()){
+      const partList = folders.filter(f =>
+        f.name.toLowerCase().trim() === 'part list'
+      );
+      renderFolderTiles(partList);
+      list.innerHTML = '<div class="small">Open <b>Part List</b> to see folders.</div>';
+      return;
+    } else {
+      renderFolderTiles(folders);
+    }
+  }catch{}
+
+  return _publicListFiles();
+};
+
+/* --- override privateListFiles (admin) --- */
+if (typeof privateListFiles === 'function'){
+  const _privateListFiles = privateListFiles;
+  privateListFiles = async function(){
+    list.innerHTML = '<div class="small">Loading…</div>';
+    try{
+      const folders = await listFoldersPrivate(currentFolderId);
+
+      if (isRademakerDocsRoot()){
+        const partList = folders.filter(f =>
+          f.name.toLowerCase().trim() === 'part list'
+        );
+        renderFolderTiles(partList);
+        list.innerHTML = '<div class="small">Open <b>Part List</b> to see folders.</div>';
+        return;
+      } else {
+        renderFolderTiles(folders);
+      }
+    }catch{}
+
+    return _privateListFiles();
+  };
+}
+
+/* Back button */
+if (folderOverride){
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn ghost';
+  backBtn.textContent = 'Back';
+  backBtn.onclick = () => go({ bakery:b, machine:m, cat:catKey });
+  bar.insertBefore(backBtn, bar.firstChild);
+}
 
     // INIT
     publicListFiles();
