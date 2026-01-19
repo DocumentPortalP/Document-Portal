@@ -777,285 +777,341 @@
     view.appendChild(card);
   }
 
-  function drawCategory(b,m,catKey){
-    const cat=CATS[catKey]; if(!cat){ go({bakery:b,machine:m}); return; }
-    if (isOperator() && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
-    if (b==='Other' && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
+function drawCategory(b,m,catKey){
+  const cat=CATS[catKey]; if(!cat){ go({bakery:b,machine:m}); return; }
+  if (isOperator() && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
+  if (b==='Other' && (catKey==='works' || catKey==='electrical')) { go({bakery:b,machine:m}); return; }
 
-    crumbsSet([{label:'Home',to:{}},{label:b,to:{bakery:b}},{label:m,to:{bakery:b,machine:m}},{label:cat.title,to:{bakery:b,machine:m,cat:catKey}}]);
+  crumbsSet([
+    {label:'Home',to:{}},
+    {label:b,to:{bakery:b}},
+    {label:m,to:{bakery:b,machine:m}},
+    {label:cat.title,to:{bakery:b,machine:m,cat:catKey}}
+  ]);
 
-    const view=document.getElementById('view'); view.innerHTML='';
-    const card=document.createElement('div'); card.className='card';
-    const h=document.createElement('h3'); h.textContent=`${b} › ${m} › ${cat.title}`; card.appendChild(h);
+  const view=document.getElementById('view'); view.innerHTML='';
+  const card=document.createElement('div'); card.className='card';
+  const h=document.createElement('h3'); h.textContent=`${b} › ${m} › ${cat.title}`; card.appendChild(h);
 
-    const fid = folderIdFor(b,m,catKey);
-    const hint = document.createElement('div'); hint.className='small'; card.appendChild(hint);
-    function refreshHint(){
-      if(!fid){ hint.style.display = ''; hint.innerHTML = '⚠️ Set Drive folder ID in <code>FOLDERS</code>.'; }
-      else if (isAdminSignedIn()) { hint.style.display = ''; hint.innerHTML = `Folder ID: <code>${escapeHtml(fid)}</code>`; }
-      else { hint.style.display = 'none'; hint.innerHTML = ''; }
-    }
-    refreshHint();
+  const fid = folderIdFor(b,m,catKey);
 
-    const bar=document.createElement('div'); bar.className='toolbar';
-    const search=document.createElement('input'); search.type='search'; search.placeholder='Search files';
-    const refresh=document.createElement('button'); refresh.className='btn ghost'; refresh.textContent='Refresh';
+  // folder navigation (subfolders) via query param
+  const p = params();
+  const folderOverride = p.get('folder');
+  const currentFolderId = folderOverride || fid;
 
-    const adminBtn=document.createElement('button'); adminBtn.className='btn ghost'; adminBtn.textContent='Admin: Sign in';
-    const openFolderBtn=document.createElement('button'); openFolderBtn.className='btn'; openFolderBtn.textContent='Open Drive folder (Admin)'; openFolderBtn.style.display='none';
-    openFolderBtn.onclick=()=>{ if(fid) window.open(`https://drive.google.com/drive/folders/${fid}`, '_blank'); };
-
-    if (isAdmin()){ bar.append(adminBtn, openFolderBtn); }
-    bar.append(search, refresh); card.appendChild(bar);
-
-    const list=document.createElement('div'); list.className='list'; card.appendChild(list);
-    view.appendChild(card);
-
-    const allowSet = getOpAllowSet();
-    const isDocOrProc = (catKey==='documentation' || catKey==='procedures');
-
-    async function publicListFiles(){
-      list.innerHTML='<div class="small">Loading…</div>';
-      try{
-        if(!fid){ list.innerHTML='<div class="small">Set Drive folder ID.</div>'; return; }
-        const params=new URLSearchParams({
-          q:`'${fid}' in parents and trashed=false`,
-          fields:'files(id,name,modifiedTime,mimeType,webViewLink)',
-          orderBy:'modifiedTime desc', pageSize:'100', key:API_KEY,
-          supportsAllDrives:'true', includeItemsFromAllDrives:'true'
-        });
-        const res=await fetch('https://www.googleapis.com/drive/v3/files?'+params.toString());
-        if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error?.message||('HTTP '+res.status)); }
-        let items=(await res.json()).files||[];
-
-        const s=(search.value||'').toLowerCase();
-        if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
-
-        if (isOperator()){
-          if (isDocOrProc){
-            items = items.filter(f => allowSet.has(f.id));
-            if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; }
-          } else {
-            list.innerHTML = '<div class="small">Not permitted.</div>'; return;
-          }
-        }
-
-        if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        items.sort((a, b) => a.name.localeCompare(b.name));
-        renderFileRows(items, false);
-      }catch(e){ list.innerHTML=`<div class="small">Public list error: ${escapeHtml(e.message||String(e))}</div>`; }
-    }
-
-    async function privateListFiles(){
-      list.innerHTML='<div class="small">Loading…</div>';
-      try{
-        if(!fid){ list.innerHTML='<div class="small">Set Drive folder ID.</div>'; return; }
-        const q=`'${fid}' in parents and trashed=false`;
-        const res=await gapi.client.drive.files.list({ q, fields:'files(id,name,modifiedTime,mimeType,webViewLink)', orderBy:'modifiedTime desc', pageSize:100, supportsAllDrives:true, includeItemsFromAllDrives:true });
-        let items=res.result.files||[];
-        const s=(search.value||'').toLowerCase(); if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
-        if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
-        items.sort((a,b) => a.name.localeCompare(b.name));
-        renderFileRows(items, true);
-      }catch(e){ list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`; }
-    }
-
-    function renderFileRows(items, adminMode){
-      list.innerHTML='';
-      items.forEach(f=>{
-        const row=document.createElement('div'); row.className='item';
-
-        const title=document.createElement('a'); title.className='title'; title.href='#';
-        title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
-        const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
-        title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
-
-        const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
-
-        if (adminMode && isAdmin() && isDocOrProc){
-          const lbl=document.createElement('label'); lbl.className='small'; lbl.style.display='flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
-          const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = getOpAllowSet().has(f.id);
-          cb.onchange=()=> setOpAllow(f.id, cb.checked);
-          lbl.append(cb, document.createTextNode('Allow operator'));
-          right.appendChild(lbl);
-        }
-
-        const dl=document.createElement('a'); dl.className='icon-btn';
-        dl.href = adminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
-        dl.target='_blank'; dl.rel='noopener';
-        dl.title='Download';
-        dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-        right.appendChild(dl);
-
-        if (adminMode && isAdmin()){
-          const del=document.createElement('button'); del.className='icon-btn'; del.title='Delete';
-          del.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M10 7v12m4-12v12M9 7l1-2h4l1 2M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-          del.onclick=async()=>{ if(!confirm('Delete file?')) return;
-            try{ await gapi.client.drive.files.delete({fileId:f.id}); await privateListFiles(); }
-            catch(e){ alert('Delete failed: '+(e.result?.error?.message||e.message)); } };
-          right.appendChild(del);
-        }
-
-        row.append(title, right);
-        list.appendChild(row);
-      });
-    }
-/* ===== Rademaker → Documentation → Part List navigation ===== */
-
-const urlParams = new URLSearchParams(location.search);
-const folderOverride = urlParams.get('folder');
-const currentFolderId = folderOverride || fid;
-
-// container for folder tiles
-const foldersWrap = document.createElement('div');
-foldersWrap.className = 'grid';
-foldersWrap.style.margin = '10px 0';
-card.insertBefore(foldersWrap, list);
-
-function renderFolderTiles(folders){
-  foldersWrap.innerHTML = '';
-  if(!folders || !folders.length) return;
-
-  folders.forEach(f=>{
-    const a = document.createElement('a');
-    a.className = 'tile square c2';
-    a.href =
-      `?bakery=${encodeURIComponent(b)}` +
-      `&machine=${encodeURIComponent(m)}` +
-      `&cat=${encodeURIComponent(catKey)}` +
-      `&folder=${encodeURIComponent(f.id)}`;
-    a.innerHTML = `<h2>${escapeHtml(f.name)}</h2><p>Open folder</p>`;
-    foldersWrap.appendChild(a);
-  });
-}
-
-async function listFoldersPublic(parentId){
-  const q = `'${parentId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
-  const p = new URLSearchParams({
-    q,
-    fields:'files(id,name)',
-    orderBy:'name',
-    pageSize:'200',
-    key:API_KEY,
-    supportsAllDrives:'true',
-    includeItemsFromAllDrives:'true'
-  });
-  const r = await fetch('https://www.googleapis.com/drive/v3/files?' + p.toString());
-  if(!r.ok) return [];
-  return (await r.json()).files || [];
-}
-
-async function listFoldersPrivate(parentId){
-  const q = `'${parentId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
-  const r = await gapi.client.drive.files.list({
-    q,
-    fields:'files(id,name)',
-    orderBy:'name',
-    pageSize:200,
-    supportsAllDrives:true,
-    includeItemsFromAllDrives:true
-  });
-  return r.result.files || [];
-}
-
-function isRademakerDocsRoot(){
-  return (
-    b === 'Bakery 2' &&
-    m === 'Rademaker' &&
-    catKey === 'documentation' &&
-    !folderOverride
-  );
-}
-
-/* --- override publicListFiles --- */
-const _publicListFiles = publicListFiles;
-publicListFiles = async function(){
-  list.innerHTML = '<div class="small">Loading…</div>';
-  try{
-    const folders = await listFoldersPublic(currentFolderId);
-
-    if (isRademakerDocsRoot()){
-      const partList = folders.filter(f =>
-        f.name.toLowerCase().trim() === 'part list'
-      );
-      renderFolderTiles(partList);
-      list.innerHTML = '<div class="small">Open <b>Part List</b> to see folders.</div>';
-      return;
+  const hint = document.createElement('div'); hint.className='small'; card.appendChild(hint);
+  function refreshHint(){
+    if(!fid){
+      hint.style.display = '';
+      hint.innerHTML = '⚠️ Set Drive folder ID in <code>FOLDERS</code>.';
+    } else if (isAdminSignedIn()) {
+      hint.style.display = '';
+      hint.innerHTML = `Folder ID: <code>${escapeHtml(currentFolderId)}</code>`;
     } else {
-      renderFolderTiles(folders);
+      hint.style.display = 'none';
+      hint.innerHTML = '';
     }
-  }catch{}
+  }
+  refreshHint();
 
-  return _publicListFiles();
-};
+  const bar=document.createElement('div'); bar.className='toolbar';
+  const search=document.createElement('input'); search.type='search'; search.placeholder='Search files';
+  const refresh=document.createElement('button'); refresh.className='btn ghost'; refresh.textContent='Refresh';
 
-/* --- override privateListFiles (admin) --- */
-if (typeof privateListFiles === 'function'){
-  const _privateListFiles = privateListFiles;
-  privateListFiles = async function(){
-    list.innerHTML = '<div class="small">Loading…</div>';
-    try{
-      const folders = await listFoldersPrivate(currentFolderId);
+  const adminBtn=document.createElement('button'); adminBtn.className='btn ghost'; adminBtn.textContent='Admin: Sign in';
+  const openFolderBtn=document.createElement('button'); openFolderBtn.className='btn'; openFolderBtn.textContent='Open Drive folder (Admin)';
+  openFolderBtn.style.display='none';
+  openFolderBtn.onclick=()=>{ if(currentFolderId) window.open(`https://drive.google.com/drive/folders/${currentFolderId}`, '_blank'); };
 
-      if (isRademakerDocsRoot()){
-        const partList = folders.filter(f =>
-          f.name.toLowerCase().trim() === 'part list'
+  // Back button (only when browsing a subfolder)
+  if (folderOverride){
+    const backBtn = document.createElement('button');
+    backBtn.className = 'btn ghost';
+    backBtn.textContent = 'Back';
+    backBtn.onclick = ()=> go({bakery:b, machine:m, cat:catKey});
+    bar.appendChild(backBtn);
+  }
+
+  if (isAdmin()){ bar.append(adminBtn, openFolderBtn); }
+  bar.append(search, refresh);
+  card.appendChild(bar);
+
+  // Folder list (LIST STYLE)
+  const folderList = document.createElement('div');
+  folderList.className = 'list';
+  folderList.style.marginTop = '10px';
+  card.appendChild(folderList);
+
+  // File list (existing behavior)
+  const list=document.createElement('div'); list.className='list';
+  card.appendChild(list);
+
+  view.appendChild(card);
+
+  const allowSet = getOpAllowSet();
+  const isDocOrProc = (catKey==='documentation' || catKey==='procedures');
+
+  function isRademakerDocs(){
+    return (b === 'Bakery 2' && m === 'Rademaker' && catKey === 'documentation');
+  }
+
+  function makeFolderRow(folderName, onOpen){
+    const row = document.createElement('div');
+    row.className = 'item';
+
+    const title = document.createElement('a');
+    title.className = 'title';
+    title.href = '#';
+    title.onclick = (e)=>{ e.preventDefault(); onOpen(); };
+    title.innerHTML = `
+      <div>
+        <strong>📁 ${escapeHtml(folderName)}</strong>
+        <div class="meta">Folder</div>
+      </div>
+    `;
+
+    const right = document.createElement('div');
+    right.style.display='flex';
+    right.style.gap='8px';
+    right.style.alignItems='center';
+
+    const openBtn = document.createElement('button');
+    openBtn.className = 'btn ghost badge';
+    openBtn.textContent = 'Open';
+    openBtn.onclick = onOpen;
+
+    right.appendChild(openBtn);
+    row.append(title, right);
+    return row;
+  }
+
+  async function listFoldersPublic(parentId){
+    const q = `'${parentId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+    const sp = new URLSearchParams({
+      q,
+      fields:'files(id,name)',
+      orderBy:'name',
+      pageSize:'200',
+      key:API_KEY,
+      supportsAllDrives:'true',
+      includeItemsFromAllDrives:'true'
+    });
+    const res = await fetch('https://www.googleapis.com/drive/v3/files?' + sp.toString());
+    if(!res.ok) return [];
+    return (await res.json()).files || [];
+  }
+
+  async function listFoldersPrivate(parentId){
+    const q = `'${parentId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+    const res = await gapi.client.drive.files.list({
+      q,
+      fields:'files(id,name)',
+      orderBy:'name',
+      pageSize:200,
+      supportsAllDrives:true,
+      includeItemsFromAllDrives:true
+    });
+    return res.result.files || [];
+  }
+
+  function renderFolderList(folders){
+    folderList.innerHTML = '';
+
+    // Root (Rademaker Docs): show only Part List folder as a list row
+    if (isRademakerDocs() && !folderOverride){
+      const part = folders.find(f => (f.name||'').trim().toLowerCase() === 'part list');
+      if(part){
+        folderList.appendChild(
+          makeFolderRow('Part List', ()=> go({bakery:b, machine:m, cat:catKey, folder: part.id}))
         );
-        renderFolderTiles(partList);
-        list.innerHTML = '<div class="small">Open <b>Part List</b> to see folders.</div>';
-        return;
-      } else {
-        renderFolderTiles(folders);
       }
-    }catch{}
-
-    return _privateListFiles();
-  };
-}
-
-/* Back button */
-if (folderOverride){
-  const backBtn = document.createElement('button');
-  backBtn.className = 'btn ghost';
-  backBtn.textContent = 'Back';
-  backBtn.onclick = () => go({ bakery:b, machine:m, cat:catKey });
-  bar.insertBefore(backBtn, bar.firstChild);
-}
-
-    // INIT
-    publicListFiles();
-    refresh.onclick = publicListFiles;
-    search.oninput = publicListFiles;
-
-    if (isAdmin()){
-      adminBtn.onclick = async () => {
-        try{
-          await ensureAuth();
-          refreshHint(); openFolderBtn.style.display=''; adminBtn.style.display='none';
-          refresh.onclick = privateListFiles; search.oninput = privateListFiles; await privateListFiles();
-          const signOut = document.createElement('button'); signOut.className='btn ghost'; signOut.textContent='Admin: Sign out';
-          signOut.onclick = ()=>{ accessToken=null; alert('Signed out. Refresh to return to public mode.'); };
-          bar.append(signOut);
-        }catch(e){ alert('Sign-in failed: ' + (e.message || String(e))); }
-      };
+      return;
     }
 
-    if (catKey==='works'){
-      if (isOperator()){ go({bakery:b,machine:m}); return; }
-      const sheetWrap = document.createElement('div');
-      sheetWrap.className='card';
-      sheetWrap.style.marginTop='12px';
-      sheetWrap.innerHTML = '<div class="small">Loading Work History…</div>';
-      view.insertBefore(sheetWrap, card);
-      drawWorksSheetView(b,m,sheetWrap).then(loaded=>{
-        if (loaded!==null){
-          card.style.display = 'none';
-        } else {
-          sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
-        }
+    // Inside Part List (or any other subfolder): show ALL subfolders
+    if (folders && folders.length){
+      folders.forEach(fd=>{
+        folderList.appendChild(
+          makeFolderRow(fd.name, ()=> go({bakery:b, machine:m, cat:catKey, folder: fd.id}))
+        );
       });
     }
   }
+
+  async function publicListFiles(){
+    list.innerHTML='<div class="small">Loading…</div>';
+    try{
+      if(!currentFolderId){ list.innerHTML='<div class="small">Set Drive folder ID.</div>'; return; }
+
+      // Folders first
+      try{
+        const folders = await listFoldersPublic(currentFolderId);
+        renderFolderList(folders);
+      }catch{ folderList.innerHTML=''; }
+
+      const paramsQ=new URLSearchParams({
+        q:`'${currentFolderId}' in parents and trashed=false`,
+        fields:'files(id,name,modifiedTime,mimeType,webViewLink)',
+        orderBy:'modifiedTime desc',
+        pageSize:'100',
+        key:API_KEY,
+        supportsAllDrives:'true',
+        includeItemsFromAllDrives:'true'
+      });
+      const res=await fetch('https://www.googleapis.com/drive/v3/files?'+paramsQ.toString());
+      if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error?.message||('HTTP '+res.status)); }
+      let items=(await res.json()).files||[];
+
+      // Remove folders from file listing (we show folders separately)
+      items = items.filter(f => f.mimeType !== 'application/vnd.google-apps.folder');
+
+      const s=(search.value||'').toLowerCase();
+      if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
+
+      if (isOperator()){
+        if (isDocOrProc){
+          items = items.filter(f => allowSet.has(f.id));
+          if (!items.length){ list.innerHTML = '<div class="small">No files allowed for operator yet.</div>'; return; }
+        } else {
+          list.innerHTML = '<div class="small">Not permitted.</div>'; return;
+        }
+      }
+
+      if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
+      items.sort((a, b) => a.name.localeCompare(b.name));
+      renderFileRows(items, false);
+    }catch(e){
+      list.innerHTML=`<div class="small">Public list error: ${escapeHtml(e.message||String(e))}</div>`;
+    }
+  }
+
+  async function privateListFiles(){
+    list.innerHTML='<div class="small">Loading…</div>';
+    try{
+      if(!currentFolderId){ list.innerHTML='<div class="small">Set Drive folder ID.</div>'; return; }
+
+      // Folders first
+      try{
+        const folders = await listFoldersPrivate(currentFolderId);
+        renderFolderList(folders);
+      }catch{ folderList.innerHTML=''; }
+
+      const q=`'${currentFolderId}' in parents and trashed=false`;
+      const res=await gapi.client.drive.files.list({
+        q,
+        fields:'files(id,name,modifiedTime,mimeType,webViewLink)',
+        orderBy:'modifiedTime desc',
+        pageSize:100,
+        supportsAllDrives:true,
+        includeItemsFromAllDrives:true
+      });
+      let items=res.result.files||[];
+
+      // Remove folders from file listing (we show folders separately)
+      items = items.filter(f => f.mimeType !== 'application/vnd.google-apps.folder');
+
+      const s=(search.value||'').toLowerCase();
+      if(s) items=items.filter(f=>(f.name||'').toLowerCase().includes(s));
+
+      if(!items.length){ list.innerHTML='<div class="small">No files yet.</div>'; return; }
+      items.sort((a,b) => a.name.localeCompare(b.name));
+      renderFileRows(items, true);
+    }catch(e){
+      list.innerHTML=`<div class='small'>Error: ${escapeHtml(e.message||String(e))}</div>`;
+    }
+  }
+
+  function renderFileRows(items, adminMode){
+    list.innerHTML='';
+    items.forEach(f=>{
+      const row=document.createElement('div'); row.className='item';
+
+      const title=document.createElement('a'); title.className='title'; title.href='#';
+      title.onclick=(e)=>{ e.preventDefault(); openInlinePreview(f, adminMode); };
+
+      const when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
+      title.innerHTML=`<div><strong>${escapeHtml(f.name)}</strong><div class="meta">${escapeHtml(f.mimeType||'')} • ${escapeHtml(when)}</div></div>`;
+
+      const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+
+      if (adminMode && isAdmin() && isDocOrProc){
+        const lbl=document.createElement('label'); lbl.className='small';
+        lbl.style.display='flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
+        const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = getOpAllowSet().has(f.id);
+        cb.onchange=()=> setOpAllow(f.id, cb.checked);
+        lbl.append(cb, document.createTextNode('Allow operator'));
+        right.appendChild(lbl);
+      }
+
+      const dl=document.createElement('a'); dl.className='icon-btn';
+      dl.href = adminMode ? `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` : publicDownloadUrl(f.id);
+      dl.target='_blank'; dl.rel='noopener';
+      dl.title='Download';
+      dl.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      right.appendChild(dl);
+
+      if (adminMode && isAdmin()){
+        const del=document.createElement('button'); del.className='icon-btn'; del.title='Delete';
+        del.innerHTML=`<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M10 7v12m4-12v12M9 7l1-2h4l1 2M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        del.onclick=async()=>{
+          if(!confirm('Delete file?')) return;
+          try{ await gapi.client.drive.files.delete({fileId:f.id}); await privateListFiles(); }
+          catch(e){ alert('Delete failed: '+(e.result?.error?.message||e.message)); }
+        };
+        right.appendChild(del);
+      }
+
+      row.append(title, right);
+      list.appendChild(row);
+    });
+  }
+
+  // INIT
+  publicListFiles();
+  refresh.onclick = publicListFiles;
+  search.oninput = publicListFiles;
+
+  if (isAdmin()){
+    adminBtn.onclick = async () => {
+      try{
+        await ensureAuth();
+        refreshHint();
+        openFolderBtn.style.display='';
+        adminBtn.style.display='none';
+
+        refresh.onclick = privateListFiles;
+        search.oninput = privateListFiles;
+        await privateListFiles();
+
+        const signOut = document.createElement('button');
+        signOut.className='btn ghost';
+        signOut.textContent='Admin: Sign out';
+        signOut.onclick = ()=>{ accessToken=null; alert('Signed out. Refresh to return to public mode.'); };
+        bar.append(signOut);
+      }catch(e){
+        alert('Sign-in failed: ' + (e.message || String(e)));
+      }
+    };
+  }
+
+  if (catKey==='works'){
+    if (isOperator()){ go({bakery:b,machine:m}); return; }
+    const sheetWrap = document.createElement('div');
+    sheetWrap.className='card';
+    sheetWrap.style.marginTop='12px';
+    sheetWrap.innerHTML = '<div class="small">Loading Work History…</div>';
+    view.insertBefore(sheetWrap, card);
+    drawWorksSheetView(b,m,sheetWrap).then(loaded=>{
+      if (loaded!==null){
+        card.style.display = 'none';
+      } else {
+        sheetWrap.innerHTML = '<div class="small">No Sheet mapping found — showing Drive listing below.</div>';
+      }
+    });
+  }
+}
+
 
   /* ===== Global Search ===== */
   function buildFolderIndex(){
