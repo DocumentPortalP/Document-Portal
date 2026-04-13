@@ -1314,6 +1314,23 @@ function drawCategory(b,m,catKey){
         engineers,
         fromWeek
       });
+      window.loadShift = async function(letter){
+  try {
+    const ref = doc(db, "shiftPlanner", letter);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      console.log("Loaded", letter, snap.data());
+      return snap.data();
+    } else {
+      console.log("No data found for", letter);
+      return null;
+    }
+  } catch(err){
+    console.error("Load failed", err);
+    return null;
+  }
+};
 
       console.log("Saved", letter, engineers, fromWeek);
       alert(`Shift ${letter} saved from week ${fromWeek}`);
