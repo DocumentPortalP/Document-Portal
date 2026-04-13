@@ -1272,10 +1272,9 @@ function drawCategory(b,m,catKey){
   if(sessionStorage.getItem('unlocked') === '1'){
     doUnlock(sessionStorage.getItem('role')||'operator');
   }
-</script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCenPiFOZwK-MvaU4gXF5WUTmo6FKCrvvU",
@@ -1293,6 +1292,20 @@ function drawCategory(b,m,catKey){
   window.db = db;
 
   console.log("Firebase connected");
+
+  async function testWrite() {
+    try {
+      await setDoc(doc(db, "test", "connection"), {
+        message: "Firebase write works",
+        createdAt: new Date().toISOString()
+      });
+      console.log("Firestore write success");
+    } catch (err) {
+      console.error("Firestore write failed", err);
+    }
+  }
+
+  testWrite();
 </script>
 </body>
 </html>
