@@ -383,6 +383,8 @@ label.radio{display:block;margin:8px 0}
   const pinInput = document.getElementById("pinInput");
   const pinBtn = document.getElementById("pinBtn");
   const pinMsg = document.getElementById("pinMsg");
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+let logoutTimer = null;
 
   function getRole() {
     return sessionStorage.getItem("shiftRole") || "";
@@ -401,7 +403,26 @@ label.radio{display:block;margin:8px 0}
     lockscreen.style.display = "none";
     updatePermissions();
     startRealtimeSync();
+    resetLogoutTimer();
   }
+  function resetLogoutTimer() {
+  if (!getRole()) return;
+
+  clearTimeout(logoutTimer);
+  logoutTimer = setTimeout(() => {
+    sessionStorage.removeItem("shiftRole");
+    alert("Session expired. Please log in again.");
+    location.reload();
+  }, SESSION_TIMEOUT_MS);
+}
+
+function bindActivityListeners() {
+  ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(eventName => {
+    window.addEventListener(eventName, () => {
+      resetLogoutTimer();
+    }, { passive: true });
+  });
+}
 
   function checkPin() {
     const value = (pinInput.value || "").trim();
@@ -824,6 +845,7 @@ function renderEditor(){
 
   renderSchedule();
   updatePermissions();
+  bindActivityListeners();
   if (sessionStorage.getItem("shiftRole")) {
   unlock(sessionStorage.getItem("shiftRole"));
 }
