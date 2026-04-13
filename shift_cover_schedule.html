@@ -422,9 +422,6 @@ Jason"></textarea>
     if (e.key === "Enter") checkPin();
   });
 
-  if (sessionStorage.getItem("shiftRole")) {
-    unlock(sessionStorage.getItem("shiftRole"));
-  }
 
   const weekMonths = {
     14:'April',
@@ -830,6 +827,9 @@ function renderEditor(){
 
   renderSchedule();
   updatePermissions();
+  if (sessionStorage.getItem("shiftRole")) {
+  unlock(sessionStorage.getItem("shiftRole"));
+}
 </script>
 </body>
 </html>
