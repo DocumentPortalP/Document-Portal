@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shift Planner</title>
+<style>
+body{margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1f2937}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+h1,h2,h3{margin:0}
+button{padding:10px 16px;border:none;border-radius:12px;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer}
+button.secondary{background:#e5e7eb;color:#111827}
+.tables{display:grid;gap:24px}
+.table-card,.editor{background:#fff;border:1px solid #dbe2ea;border-radius:24px;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.08)}
+.editor{display:none;padding:24px}
+.grid{display:grid;grid-template-columns:140px repeat(7,minmax(100px,1fr)) 180px;min-width:1120px}
+.cell{padding:10px;border-right:1px solid #dbe2ea;border-bottom:1px solid #dbe2ea;min-height:84px;box-sizing:border-box;background:#fff}
+.header-cell,.week-cell,.side-cell,.notes-head{background:#b9c5d4;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center}
+.week-cell{justify-content:flex-start;font-size:22px;padding-left:14px}
+.side-cell{font-size:18px}
+.notes-head{font-size:16px;cursor:pointer}
+.empty{background:#f8fafc}
+.shift{border-radius:14px;padding:10px;text-align:center;border:1px solid rgba(0,0,0,.08);box-shadow:0 5px 14px rgba(15,23,42,.08);cursor:pointer}
+.shift-title{font-weight:800;text-decoration:underline;margin-bottom:6px;font-size:15px}
+.shift-text{line-height:1.25;font-size:12px}
+.shift-a{background:#d9e8f6}.shift-b{background:#f2e7d8}.shift-c{background:#e3efd9}.shift-d{background:#f3e6c8}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:20px}
+.card{border:1px solid #dbe2ea;border-radius:18px;padding:14px;background:#f8fafc;cursor:pointer}
+.card .day{font-weight:700;color:#64748b;margin-bottom:10px}
+.small{margin-top:4px;color:#64748b}
+.notes-cell{background:#f8fafc;cursor:pointer;grid-row:span 4;display:flex;align-items:flex-start}
+.notes-box{font-size:13px;line-height:1.35;color:#334155;white-space:pre-line;overflow:hidden;display:-webkit-box;-webkit-line-clamp:12;-webkit-box-orient:vertical;max-height:220px;width:100%}
+.header-cell.day-selectable{cursor:pointer}
+.header-cell.day-selectable.defrost{background:linear-gradient(180deg,#bfe7fb,#8ed1f7);color:#0f172a}
+.day-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.day-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.78);font-size:11px;font-weight:700;line-height:1.1;box-shadow:0 1px 4px rgba(15,23,42,.08)}
+#modal,#applyModal,#cellModal,#dayModal,#notesModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal-box{background:#fff;border-radius:20px;padding:20px;width:380px;max-width:100%}
+input,textarea,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:12px;box-sizing:border-box;font:inherit}
+.actions{display:flex;justify-content:flex-end;gap:10px}
+label.radio{display:block;margin:8px 0}
+</style>
+</head>
+<body>
+<div id="scheduleView">
+  <div class="header">
+    <h1>Shift Planner</h1>
+    <button id="editTemplatesBtn">Edit Shift Templates</button>
+  </div>
+  <div class="tables" id="tables"></div>
+</div>
+
+<div id="editorView" class="editor">
+  <div class="header">
+    <div>
+      <h2>Edit Shift Templates</h2>
+      <div class="small">Edit Shift A, B, C and D. You can choose from which week the change should apply.</div>
+    </div>
+    <button id="backBtn" class="secondary">Back</button>
+  </div>
+  <div id="cards" class="cards"></div>
+</div>
+
+<div id="modal">
+  <div class="modal-box">
+    <h3>Edit Shift Template</h3>
+    <input id="titleInput" placeholder="Shift title">
+    <textarea id="textInput" rows="4" placeholder="Engineer initials"></textarea>
+    <select id="colorInput">
+      <option value="shift-a">Shift A colour</option>
+      <option value="shift-b">Shift B colour</option>
+      <option value="shift-c">Shift C colour</option>
+      <option value="shift-d">Shift D colour</option>
+    </select>
+    <div class="small">After Save, choose from which week this template change starts.</div>
+    <div class="actions">
+      <button id="cancelBtn" class="secondary">Cancel</button>
+      <button id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="applyModal">
+  <div class="modal-box">
+    <h3>Apply Template Change</h3>
+    <select id="applyWeekInput"></select>
+    <div class="actions">
+      <button id="cancelApplyBtn" class="secondary">Cancel</button>
+      <button id="confirmApplyBtn">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div id="dayModal">
+  <div class="modal-box">
+    <h3>Edit Day Type</h3>
+    <div class="small" id="dayModalLabel" style="margin-bottom:12px"></div>
+    <label class="radio"><input type="radio" name="dayType" value="normal"> Normal day</label>
+    <label class="radio"><input type="radio" name="dayType" value="site1"> Site 1 Defrost</label>
+    <label class="radio"><input type="radio" name="dayType" value="site2"> Site 2 Defrost</label>
+    <div class="actions">
+      <button id="cancelDayBtn" class="secondary">Cancel</button>
+      <button id="saveDayBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="notesModal">
+  <div class="modal-box">
+    <h3>Edit Week Notes</h3>
+    <div class="small" id="notesModalLabel" style="margin-bottom:12px"></div>
+    <textarea id="notesInput" rows="6" placeholder="Weekly notes"></textarea>
+    <div class="actions">
+      <button id="cancelNotesBtn" class="secondary">Cancel</button>
+      <button id="saveNotesBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="cellModal">
+  <div class="modal-box">
+    <h3>Edit Single Shift Cell</h3>
+    <input id="cellTitleInput" placeholder="Shift title">
+    <textarea id="cellTextInput" rows="4" placeholder="Engineer initials"></textarea>
+    <select id="cellColorInput">
+      <option value="shift-a">Shift A colour</option>
+      <option value="shift-b">Shift B colour</option>
+      <option value="shift-c">Shift C colour</option>
+      <option value="shift-d">Shift D colour</option>
+    </select>
+    <div class="actions">
+      <button id="cancelCellBtn" class="secondary">Cancel</button>
+      <button id="saveCellBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const weekMonths = {
+  14:'April',
+  15:'April',
+  16:'April',
+  17:'April',
+  18:'May',
+  19:'May',
+  20:'May',
+  21:'May'
+};
+
+const weeks = {
+  14: ['Mon 30','Tue 31','Wed 01','Thu 02','Fri 03','Sat 04','Sun 05'],
+  15: ['Mon 06','Tue 07','Wed 08','Thu 09','Fri 10','Sat 11','Sun 12'],
+  16: ['Mon 13','Tue 14','Wed 15','Thu 16','Fri 17','Sat 18','Sun 19'],
+  17: ['Mon 20','Tue 21','Wed 22','Thu 23','Fri 24','Sat 25','Sun 26'],
+  18: ['Mon 27','Tue 28','Wed 29','Thu 30','Fri 01','Sat 02','Sun 03'],
+  19: ['Mon 04','Tue 05','Wed 06','Thu 07','Fri 08','Sat 09','Sun 10'],
+  20: ['Mon 11','Tue 12','Wed 13','Thu 14','Fri 15','Sat 16','Sun 17'],
+  21: ['Mon 18','Tue 19','Wed 20','Thu 21','Fri 22','Sat 23','Sun 24']
+};
+
+const templateVersions = {
+  A:[{startWeek:14,data:{title:'Shift A',text:'JM / CQ\nFD (AJ)',color:'shift-a'}}],
+  B:[{startWeek:14,data:{title:'Shift B',text:'AL / ML\nJN',color:'shift-b'}}],
+  C:[{startWeek:14,data:{title:'Shift C',text:'AM /\nBW / SMcT',color:'shift-c'}}],
+  D:[{startWeek:14,data:{title:'Shift D',text:'PM / ED\nBS (MI)',color:'shift-d'}}]
+};
+
+const weekNotes = {};
+const dayTypes = {};
+Object.keys(weeks).forEach(w => {
+  weekNotes[w] = '';
+  dayTypes[w] = Array(7).fill('normal');
+});
+const cellOverrides = {};
+const rowLabels = ['Days','Nights','Days','Nights'];
+
+function weekPattern(week){
+  const phase = (week - 14) % 4;
+  if(phase === 0) return [
+    ['','','A','A','','',''],
+    ['','','B','B','','',''],
+    ['D','D','','','C','C','C'],
+    ['C','C','','','D','D','D']
+  ];
+  if(phase === 1) return [
+    ['B','B','','','A','A','A'],
+    ['A','A','','','B','B','B'],
+    ['','','D','D','','',''],
+    ['','','C','C','','','']
+  ];
+  if(phase === 2) return [
+    ['','','B','B','','',''],
+    ['','','A','A','','',''],
+    ['C','C','','','D','D','D'],
+    ['D','D','','','C','C','C']
+  ];
+  return [
+    ['A','A','','','B','B','B'],
+    ['B','B','','','A','A','A'],
+    ['','','C','C','','',''],
+    ['','','D','D','','','']
+  ];
+}
+
+function cloneData(obj){ return JSON.parse(JSON.stringify(obj)); }
+function getTemplateForWeek(code, week){
+  const versions = templateVersions[code] || [];
+  let current = cloneData(versions[0].data);
+  versions.forEach(v => { if(v.startWeek <= week) current = cloneData(v.data); });
+  return current;
+}
+function getCellData(week, rowIndex, colIndex, code){
+  const key = `${week}-${rowIndex}-${colIndex}`;
+  if(cellOverrides[key]) return cloneData(cellOverrides[key]);
+  return getTemplateForWeek(code, week);
+}
+
+const tables = document.getElementById('tables');
+const cards = document.getElementById('cards');
+const scheduleView = document.getElementById('scheduleView');
+const editorView = document.getElementById('editorView');
+const modal = document.getElementById('modal');
+const applyModal = document.getElementById('applyModal');
+const dayModal = document.getElementById('dayModal');
+const notesModal = document.getElementById('notesModal');
+const cellModal = document.getElementById('cellModal');
+const editTemplatesBtn = document.getElementById('editTemplatesBtn');
+const backBtn = document.getElementById('backBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const saveBtn = document.getElementById('saveBtn');
+const cancelApplyBtn = document.getElementById('cancelApplyBtn');
+const confirmApplyBtn = document.getElementById('confirmApplyBtn');
+const cancelDayBtn = document.getElementById('cancelDayBtn');
+const saveDayBtn = document.getElementById('saveDayBtn');
+const cancelNotesBtn = document.getElementById('cancelNotesBtn');
+const saveNotesBtn = document.getElementById('saveNotesBtn');
+const cancelCellBtn = document.getElementById('cancelCellBtn');
+const saveCellBtn = document.getElementById('saveCellBtn');
+const titleInput = document.getElementById('titleInput');
+const textInput = document.getElementById('textInput');
+const colorInput = document.getElementById('colorInput');
+const applyWeekInput = document.getElementById('applyWeekInput');
+const dayModalLabel = document.getElementById('dayModalLabel');
+const notesModalLabel = document.getElementById('notesModalLabel');
+const notesInput = document.getElementById('notesInput');
+const cellTitleInput = document.getElementById('cellTitleInput');
+const cellTextInput = document.getElementById('cellTextInput');
+const cellColorInput = document.getElementById('cellColorInput');
+
+Object.keys(weeks).forEach(w => {
+  const opt = document.createElement('option');
+  opt.value = w;
+  opt.textContent = `Week ${w}`;
+  applyWeekInput.appendChild(opt);
+});
+
+let activeShift = 'A';
+let pendingTemplateData = null;
+let activeDayWeek = null;
+let activeDayIndex = null;
+let activeNotesWeek = null;
+let activeCellKey = null;
+
+function renderWeekTable(weekNumber, days){
+  const pattern = weekPattern(weekNumber);
+  let html = `<div class="table-card"><div class="grid">`;
+  html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
+  days.forEach((day, dayIndex) => {
+    const type = dayTypes[weekNumber][dayIndex];
+    const defrost = type !== 'normal';
+    const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
+    html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
+  });
+  html += `<div class="cell notes-head" data-notes-week="${weekNumber}">Week Notes</div>`;
+
+  pattern.forEach((row, rowIndex) => {
+    html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
+    row.forEach((code, colIndex) => {
+      if(!code){
+        html += `<div class="cell empty"></div>`;
+      } else {
+        const shift = getCellData(weekNumber, rowIndex, colIndex, code);
+        html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div></div>`;
+      }
+    });
+    if(rowIndex === 0){
+      const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
+      html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\n/g,'<br>')}</div></div>`;
+    }
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+
+function bindClicks(){
+  document.querySelectorAll('.shift[data-week]').forEach(el => {
+    el.onclick = () => {
+      activeCellKey = `${el.dataset.week}-${el.dataset.row}-${el.dataset.col}`;
+      const current = getCellData(+el.dataset.week, +el.dataset.row, +el.dataset.col, el.dataset.code);
+      cellTitleInput.value = current.title;
+      cellTextInput.value = current.text;
+      cellColorInput.value = current.color;
+      cellModal.style.display = 'flex';
+    };
+  });
+  document.querySelectorAll('[data-day-week]').forEach(el => {
+    el.onclick = () => {
+      activeDayWeek = +el.dataset.dayWeek;
+      activeDayIndex = +el.dataset.dayIndex;
+      dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
+      const current = dayTypes[activeDayWeek][activeDayIndex];
+      document.querySelectorAll('input[name="dayType"]').forEach(r => r.checked = (r.value === current));
+      dayModal.style.display = 'flex';
+    };
+  });
+  document.querySelectorAll('[data-notes-week]').forEach(el => {
+    el.onclick = () => {
+      activeNotesWeek = +el.dataset.notesWeek;
+      notesModalLabel.textContent = `Week ${activeNotesWeek}`;
+      notesInput.value = weekNotes[activeNotesWeek] || '';
+      notesModal.style.display = 'flex';
+    };
+  });
+}
+
+function renderSchedule(){
+  tables.innerHTML = Object.entries(weeks).map(([week,days]) => renderWeekTable(+week, days)).join('');
+  bindClicks();
+}
+
+function renderEditor(){
+  cards.innerHTML = '';
+  Object.keys(templateVersions).forEach(key => {
+    const shift = getTemplateForWeek(key, 14);
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `<div class="day">${shift.title}</div><div class="shift ${shift.color}" style="margin-bottom:12px"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div><div class="small">Click to edit this template.</div>`;
+    el.onclick = () => {
+      activeShift = key;
+      titleInput.value = shift.title;
+      textInput.value = shift.text;
+      colorInput.value = shift.color;
+      modal.style.display = 'flex';
+    };
+    cards.appendChild(el);
+  });
+}
+
+editTemplatesBtn.onclick = () => { scheduleView.style.display='none'; editorView.style.display='block'; renderEditor(); };
+backBtn.onclick = () => { editorView.style.display='none'; scheduleView.style.display='block'; renderSchedule(); };
+cancelBtn.onclick = () => { modal.style.display='none'; };
+saveBtn.onclick = () => { pendingTemplateData = { title:titleInput.value, text:textInput.value, color:colorInput.value }; modal.style.display='none'; applyModal.style.display='flex'; };
+cancelApplyBtn.onclick = () => { applyModal.style.display='none'; pendingTemplateData = null; };
+confirmApplyBtn.onclick = () => {
+  const startWeek = +applyWeekInput.value;
+  templateVersions[activeShift].push({ startWeek, data: cloneData(pendingTemplateData) });
+  templateVersions[activeShift].sort((a,b) => a.startWeek - b.startWeek);
+  pendingTemplateData = null;
+  applyModal.style.display='none';
+  renderEditor();
+  renderSchedule();
+};
+cancelDayBtn.onclick = () => { dayModal.style.display='none'; };
+saveDayBtn.onclick = () => {
+  const selected = document.querySelector('input[name="dayType"]:checked');
+  if(selected && activeDayWeek !== null) dayTypes[activeDayWeek][activeDayIndex] = selected.value;
+  dayModal.style.display='none';
+  renderSchedule();
+};
+cancelNotesBtn.onclick = () => { notesModal.style.display='none'; };
+saveNotesBtn.onclick = () => {
+  if(activeNotesWeek !== null) weekNotes[activeNotesWeek] = notesInput.value;
+  notesModal.style.display='none';
+  renderSchedule();
+};
+cancelCellBtn.onclick = () => { cellModal.style.display='none'; };
+saveCellBtn.onclick = () => {
+  if(activeCellKey) cellOverrides[activeCellKey] = { title:cellTitleInput.value, text:cellTextInput.value, color:cellColorInput.value };
+  cellModal.style.display='none';
+  renderSchedule();
+};
+
+renderSchedule();
+</script>
+</body>
+</html>
