@@ -191,6 +191,38 @@ label.radio{display:block;margin:8px 0}
     padding:2px 6px;
   }
 }
+  .header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+  gap:12px;
+  flex-wrap:wrap;
+  position:sticky;
+  top:0;
+  z-index:30;
+  background:#f4f7fb;
+  padding:10px 0;
+}
+
+#editorLayout{
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:20px;
+  align-items:start;
+}
+
+#possibleCoversInput{
+  width:100%;
+  min-height:260px;
+  resize:vertical;
+}
+
+@media (max-width: 900px){
+  #editorLayout{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 </head>
 <body>
@@ -216,7 +248,25 @@ label.radio{display:block;margin:8px 0}
     </div>
     <button id="backBtn" class="secondary">Back</button>
   </div>
-  <div id="cards" class="cards"></div>
+
+  <div id="editorLayout">
+    <div>
+      <div id="cards" class="cards"></div>
+    </div>
+
+    <div class="card" style="cursor:default">
+      <div class="day">Possible Covers</div>
+      <div class="small" style="margin-bottom:10px">Write all engineers who can potentially cover shifts.</div>
+      <textarea id="possibleCoversInput" rows="14" placeholder="Example:
+John
+Mark
+Tommy
+Jason"></textarea>
+      <div class="actions">
+        <button id="savePossibleCoversBtn">Save</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="modal">
@@ -393,9 +443,10 @@ label.radio{display:block;margin:8px 0}
   });
 
   let templateVersions = JSON.parse(JSON.stringify(defaultTemplateVersions));
-  let weekNotes = JSON.parse(JSON.stringify(defaultWeekNotes));
-  let dayTypes = JSON.parse(JSON.stringify(defaultDayTypes));
-  let cellOverrides = {};
+let weekNotes = JSON.parse(JSON.stringify(defaultWeekNotes));
+let dayTypes = JSON.parse(JSON.stringify(defaultDayTypes));
+let cellOverrides = {};
+let possibleCovers = "";
 
   const rowLabels = ['Days','Nights','Days','Nights'];
 
@@ -430,6 +481,8 @@ label.radio{display:block;margin:8px 0}
   const cellTitleInput = document.getElementById('cellTitleInput');
   const cellTextInput = document.getElementById('cellTextInput');
   const cellColorInput = document.getElementById('cellColorInput');
+  const possibleCoversInput = document.getElementById('possibleCoversInput');
+const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
 
   applyWeekInput.innerHTML = "";
   Object.keys(weeks).forEach(w => {
@@ -495,15 +548,16 @@ label.radio{display:block;margin:8px 0}
     return getTemplateForWeek(code, week);
   }
 
-  function getPlannerState(){
-    return {
-      templateVersions: cloneData(templateVersions),
-      weekNotes: cloneData(weekNotes),
-      dayTypes: cloneData(dayTypes),
-      cellOverrides: cloneData(cellOverrides),
-      updatedAt: new Date().toISOString()
-    };
-  }
+ function getPlannerState(){
+  return {
+    templateVersions: cloneData(templateVersions),
+    weekNotes: cloneData(weekNotes),
+    dayTypes: cloneData(dayTypes),
+    cellOverrides: cloneData(cellOverrides),
+    possibleCovers: possibleCovers,
+    updatedAt: new Date().toISOString()
+  };
+}
 
   async function savePlannerState(){
     if (!isAdmin() || isApplyingRemote) return;
@@ -515,19 +569,24 @@ label.radio{display:block;margin:8px 0}
     }
   }
 
-  function applyPlannerState(data){
-    isApplyingRemote = true;
+ function applyPlannerState(data){
+  isApplyingRemote = true;
 
-    templateVersions = data?.templateVersions ? cloneData(data.templateVersions) : cloneData(defaultTemplateVersions);
-    weekNotes = data?.weekNotes ? cloneData(data.weekNotes) : cloneData(defaultWeekNotes);
-    dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
-    cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
+  templateVersions = data?.templateVersions ? cloneData(data.templateVersions) : cloneData(defaultTemplateVersions);
+  weekNotes = data?.weekNotes ? cloneData(data.weekNotes) : cloneData(defaultWeekNotes);
+  dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
+  cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
+  possibleCovers = data?.possibleCovers || "";
 
-    renderSchedule();
-    if (editorView.style.display === "block") renderEditor();
-
-    isApplyingRemote = false;
+  if (possibleCoversInput) {
+    possibleCoversInput.value = possibleCovers;
   }
+
+  renderSchedule();
+  if (editorView.style.display === "block") renderEditor();
+
+  isApplyingRemote = false;
+}
 
   function startRealtimeSync(){
     if (unsubscribePlanner) return;
@@ -622,24 +681,28 @@ label.radio{display:block;margin:8px 0}
     bindClicks();
   }
 
-  function renderEditor(){
-    cards.innerHTML = '';
-    Object.keys(templateVersions).forEach(key => {
-      const shift = getTemplateForWeek(key, 14);
-      const el = document.createElement('div');
-      el.className = 'card';
-      el.innerHTML = `<div class="day">${shift.title}</div><div class="shift ${shift.color}" style="margin-bottom:12px"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\\n/g,'<br>')}</div></div><div class="small">Click to edit this template.</div>`;
-      el.onclick = () => {
-        if (!isAdmin()) return;
-        activeShift = key;
-        titleInput.value = shift.title;
-        textInput.value = shift.text;
-        colorInput.value = shift.color;
-        modal.style.display = 'flex';
-      };
-      cards.appendChild(el);
-    });
+function renderEditor(){
+  cards.innerHTML = '';
+  Object.keys(templateVersions).forEach(key => {
+    const shift = getTemplateForWeek(key, 14);
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `<div class="day">${shift.title}</div><div class="shift ${shift.color}" style="margin-bottom:12px"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div><div class="small">Click to edit this template.</div>`;
+    el.onclick = () => {
+      if (!isAdmin()) return;
+      activeShift = key;
+      titleInput.value = shift.title;
+      textInput.value = shift.text;
+      colorInput.value = shift.color;
+      modal.style.display = 'flex';
+    };
+    cards.appendChild(el);
+  });
+
+  if (possibleCoversInput) {
+    possibleCoversInput.value = possibleCovers || "";
   }
+}
 
   editTemplatesBtn.onclick = () => {
     if (!isAdmin()) return;
@@ -653,6 +716,11 @@ label.radio{display:block;margin:8px 0}
     scheduleView.style.display='block';
     renderSchedule();
   };
+  
+  savePossibleCoversBtn.onclick = async () => {
+  possibleCovers = possibleCoversInput.value || "";
+  await savePlannerState();
+};
 
   cancelBtn.onclick = () => { modal.style.display='none'; };
   saveBtn.onclick = () => {
