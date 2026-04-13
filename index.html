@@ -1273,5 +1273,26 @@ function drawCategory(b,m,catKey){
     doUnlock(sessionStorage.getItem('role')||'operator');
   }
   </script>
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCenPiFOZwK-MvaU4gXF5WUTmo6FKCrvvU",
+  authDomain: "shift-plan-1937f.firebaseapp.com",
+  projectId: "shift-plan-1937f",
+  storageBucket: "shift-plan-1937f.firebasestorage.app",
+  messagingSenderId: "216804667695",
+  appId: "1:216804667695:web:3903add223aa8a61dfb1da",
+  measurementId: "G-13H1P0K1XD"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 </body>
 </html>
