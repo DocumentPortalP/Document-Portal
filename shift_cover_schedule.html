@@ -270,18 +270,22 @@ label.radio{display:block;margin:8px 0}
     <p id="pinMsg" style="color:#dc2626;margin-top:10px;display:none;">Wrong code</p>
   </div>
 
-  <div id="scheduleView">
-    <div class="header">
+ <div id="scheduleView">
+  <div class="header">
+    <div class="header-top">
       <h1>Shift Planner</h1>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
-          Home
-        </a>
-        <button id="editTemplatesBtn">Edit Shift Templates</button>
-      </div>
+      <div id="liveDateTime" class="live-datetime" style="display:none;"></div>
     </div>
-    <div class="tables" id="tables"></div>
+
+    <div class="header-actions">
+      <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
+        Home
+      </a>
+      <button id="editTemplatesBtn">Edit Shift Templates</button>
+    </div>
   </div>
+  <div class="tables" id="tables"></div>
+</div>
 
   <div id="editorView" class="editor">
     <div class="header">
