@@ -260,6 +260,79 @@ label.radio{display:block;margin:8px 0}
 #homeBtn:hover{
   background:#dbe2ea;
 }
+  .header-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  width:100%;
+  flex-wrap:wrap;
+}
+
+.header-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:nowrap;
+}
+
+.live-datetime{
+  font-size:14px;
+  font-weight:700;
+  color:#334155;
+  background:#e2e8f0;
+  padding:8px 12px;
+  border-radius:12px;
+  white-space:nowrap;
+}
+
+@media (max-width: 900px){
+  .header-top{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .header-actions{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
+    width:100%;
+    gap:8px;
+  }
+
+  .header-actions a,
+  .header-actions button{
+    width:50%;
+    min-width:0;
+    margin:0;
+  }
+
+  .live-datetime{
+    width:100%;
+    text-align:center;
+    font-size:13px;
+  }
+
+  /* ovo pregazi staro pravilo da button bude 100% širine */
+  .header-actions button{
+    width:50%;
+    min-height:44px;
+    font-size:15px;
+  }
+}
+
+@media (max-width: 600px){
+  .header-actions a,
+  .header-actions button{
+    font-size:14px;
+    padding:10px 8px;
+  }
+
+  .live-datetime{
+    font-size:12px;
+    padding:7px 10px;
+  }
+}
 </style>
 </head>
 <body>
@@ -423,14 +496,53 @@ label.radio{display:block;margin:8px 0}
   function isEngineer() {
     return getRole() === "engineer";
   }
+  let liveClockInterval = null;
 
-  function unlock(role) {
-    sessionStorage.setItem("shiftRole", role);
-    lockscreen.style.display = "none";
-    updatePermissions();
-    startRealtimeSync();
-    resetLogoutTimer();
+function formatLiveDateTime() {
+  const now = new Date();
+
+  const datePart = now.toLocaleDateString('en-IE', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const timePart = now.toLocaleTimeString('en-IE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  return `${datePart} · ${timePart}`;
+}
+
+function startLiveDateTime() {
+  if (!liveDateTime) return;
+
+  clearInterval(liveClockInterval);
+
+  if (isAdmin()) {
+    liveDateTime.style.display = 'inline-flex';
+    liveDateTime.textContent = formatLiveDateTime();
+
+    liveClockInterval = setInterval(() => {
+      liveDateTime.textContent = formatLiveDateTime();
+    }, 1000);
+  } else {
+    liveDateTime.style.display = 'none';
   }
+}
+
+ function unlock(role) {
+  sessionStorage.setItem("shiftRole", role);
+  lockscreen.style.display = "none";
+  updatePermissions();
+  startRealtimeSync();
+  startLiveDateTime();
+  resetLogoutTimer();
+}
 
   function resetLogoutTimer() {
     if (!getRole()) return;
@@ -544,6 +656,7 @@ label.radio{display:block;margin:8px 0}
   const cellColorInput = document.getElementById('cellColorInput');
   const possibleCoversInput = document.getElementById('possibleCoversInput');
   const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
+  const liveDateTime = document.getElementById('liveDateTime');
 
   applyWeekInput.innerHTML = "";
   Object.keys(weeks).forEach(w => {
@@ -662,9 +775,10 @@ label.radio{display:block;margin:8px 0}
     });
   }
 
-  function updatePermissions(){
-    editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
-  }
+ function updatePermissions(){
+  editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
+  startLiveDateTime();
+}
 
   function renderWeekTable(weekNumber, days){
     const pattern = weekPattern(weekNumber);
