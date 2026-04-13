@@ -1294,50 +1294,41 @@ function drawCategory(b,m,catKey){
 
   console.log("Firebase connected");
 
-  async function testWrite() {
-    try {
-      await setDoc(doc(db, "test", "connection"), {
-        message: "Firebase write works",
-        createdAt: new Date().toISOString()
-      });
-      console.log("Firestore write success");
-    } catch (err) {
-      console.error("Firestore write failed", err);
-    }
-  }
-
-  testWrite();
-
-  window.saveShift = async function(letter, engineers, fromWeek){
+  window.saveShift = async function(letter, engineers, fromWeek) {
     try {
       await setDoc(doc(db, "shiftPlanner", letter), {
         engineers,
         fromWeek
       });
-      window.loadShift = async function(letter){
-  try {
-    const ref = doc(db, "shiftPlanner", letter);
-    const snap = await getDoc(ref);
-
-    if (snap.exists()) {
-      console.log("Loaded", letter, snap.data());
-      return snap.data();
-    } else {
-      console.log("No data found for", letter);
-      return null;
-    }
-  } catch(err){
-    console.error("Load failed", err);
-    return null;
-  }
-};
-
       console.log("Saved", letter, engineers, fromWeek);
-      alert(`Shift ${letter} saved from week ${fromWeek}`);
-    } catch(err){
+      return true;
+    } catch (err) {
       console.error("Save failed", err);
+      return false;
     }
   };
+
+  window.loadShift = async function(letter) {
+    try {
+      const ref = doc(db, "shiftPlanner", letter);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        console.log("Loaded", letter, data);
+        return data;
+      } else {
+        console.log("No data found for", letter);
+        return null;
+      }
+    } catch (err) {
+      console.error("Load failed", err);
+      return null;
+    }
+  };
+
+  console.log("saveShift type:", typeof window.saveShift);
+  console.log("loadShift type:", typeof window.loadShift);
 </script>
 </body>
 </html>
