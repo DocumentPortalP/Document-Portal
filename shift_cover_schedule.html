@@ -71,6 +71,10 @@ label.radio{display:block;margin:8px 0}
     grid-template-columns:110px repeat(7, minmax(92px, 1fr)) 150px;
     min-width:980px;
   }
+  .grid-no-notes{
+  grid-template-columns:140px repeat(7,minmax(100px,1fr));
+  min-width:940px;
+}
 
   .cell{
     padding:8px;
@@ -605,40 +609,45 @@ const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
     editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
   }
 
-  function renderWeekTable(weekNumber, days){
-    const pattern = weekPattern(weekNumber);
-    let html = `<div class="table-card"><div class="grid">`;
-    html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
+ function renderWeekTable(weekNumber, days){
+  const pattern = weekPattern(weekNumber);
+  const showNotes = isAdmin();
 
-    days.forEach((day, dayIndex) => {
-      const type = dayTypes[weekNumber][dayIndex];
-      const defrost = type !== 'normal';
-      const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
-      html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
-    });
+  let html = `<div class="table-card"><div class="grid ${showNotes ? '' : 'grid-no-notes'}">`;
+  html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
 
+  days.forEach((day, dayIndex) => {
+    const type = dayTypes[weekNumber][dayIndex];
+    const defrost = type !== 'normal';
+    const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
+    html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
+  });
+
+  if (showNotes) {
     html += `<div class="cell notes-head" data-notes-week="${weekNumber}">Week Notes</div>`;
+  }
 
-    pattern.forEach((row, rowIndex) => {
-      html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
-      row.forEach((code, colIndex) => {
-        if(!code){
-          html += `<div class="cell empty"></div>`;
-        } else {
-          const shift = getCellData(weekNumber, rowIndex, colIndex, code);
-          html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\\n/g,'<br>')}</div></div></div>`;
-        }
-      });
+  pattern.forEach((row, rowIndex) => {
+    html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
 
-      if(rowIndex === 0){
-        const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
-        html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\\n/g,'<br>')}</div></div>`;
+    row.forEach((code, colIndex) => {
+      if(!code){
+        html += `<div class="cell empty"></div>`;
+      } else {
+        const shift = getCellData(weekNumber, rowIndex, colIndex, code);
+        html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div></div>`;
       }
     });
 
-    html += `</div></div>`;
-    return html;
-  }
+    if (showNotes && rowIndex === 0) {
+      const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
+      html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\n/g,'<br>')}</div></div>`;
+    }
+  });
+
+  html += `</div></div>`;
+  return html;
+}
 
   function bindClicks(){
     document.querySelectorAll('.shift[data-week]').forEach(el => {
@@ -683,27 +692,45 @@ const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
 
 function renderEditor(){
   cards.innerHTML = '';
+
   Object.keys(templateVersions).forEach(key => {
     const shift = getTemplateForWeek(key, 14);
+
     const el = document.createElement('div');
     el.className = 'card';
-    el.innerHTML = `<div class="day">${shift.title}</div><div class="shift ${shift.color}" style="margin-bottom:12px"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div><div class="small">Click to edit this template.</div>`;
+
+    el.innerHTML = `
+      <div class="day">${shift.title}</div>
+      <div class="shift ${shift.color}" style="margin-bottom:12px">
+        <div class="shift-title">${shift.title}</div>
+        <div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div>
+      </div>
+      <div class="small">Click to edit this template.</div>
+    `;
+
     el.onclick = () => {
       if (!isAdmin()) return;
+
       activeShift = key;
       titleInput.value = shift.title;
       textInput.value = shift.text;
       colorInput.value = shift.color;
+
       modal.style.display = 'flex';
     };
+
     cards.appendChild(el);
   });
 
-  if (possibleCoversInput) {
-    possibleCoversInput.value = possibleCovers || "";
-  }
-}
+  // POPUNI Possible Covers polje
+  possibleCoversInput.value = possibleCovers || "";
 
+  // Admin smije uređivati, engineer ne
+  possibleCoversInput.readOnly = !isAdmin();
+
+  // Save gumb samo za admin
+  savePossibleCoversBtn.style.display = isAdmin() ? "inline-block" : "none";
+}
   editTemplatesBtn.onclick = () => {
     if (!isAdmin()) return;
     scheduleView.style.display='none';
@@ -718,8 +745,13 @@ function renderEditor(){
   };
   
   savePossibleCoversBtn.onclick = async () => {
+  if (!isAdmin()) return;
+
   possibleCovers = possibleCoversInput.value || "";
+
   await savePlannerState();
+
+  alert("Possible Covers saved");
 };
 
   cancelBtn.onclick = () => { modal.style.display='none'; };
