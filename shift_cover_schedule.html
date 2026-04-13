@@ -39,6 +39,158 @@ button.secondary{background:#e5e7eb;color:#111827}
 input,textarea,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:12px;box-sizing:border-box;font:inherit}
 .actions{display:flex;justify-content:flex-end;gap:10px}
 label.radio{display:block;margin:8px 0}
+  /* ===== Mobile improvements ===== */
+@media (max-width: 900px){
+  body{
+    padding:14px;
+  }
+
+  .header{
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+  }
+
+  .header h1,
+  .header h2{
+    font-size:24px;
+  }
+
+  button{
+    width:100%;
+    min-height:44px;
+    font-size:15px;
+  }
+
+  .table-card,
+  .editor{
+    border-radius:18px;
+  }
+
+  .grid{
+    grid-template-columns:110px repeat(7, minmax(92px, 1fr)) 150px;
+    min-width:980px;
+  }
+
+  .cell{
+    padding:8px;
+    min-height:74px;
+  }
+
+  .week-cell{
+    font-size:18px;
+    padding-left:10px;
+  }
+
+  .side-cell{
+    font-size:15px;
+  }
+
+  .header-cell,
+  .notes-head{
+    font-size:13px;
+  }
+
+  .shift{
+    border-radius:12px;
+    padding:8px;
+  }
+
+  .shift-title{
+    font-size:13px;
+    margin-bottom:4px;
+  }
+
+  .shift-text{
+    font-size:11px;
+    line-height:1.2;
+  }
+
+  .notes-box{
+    font-size:12px;
+    max-height:170px;
+  }
+
+  .day-badge{
+    font-size:10px;
+    padding:3px 7px;
+  }
+
+  .cards{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .card{
+    padding:12px;
+    border-radius:14px;
+  }
+
+  .modal-box{
+    width:min(100%, 96vw);
+    padding:16px;
+    border-radius:16px;
+  }
+
+  input, textarea, select{
+    font-size:16px; /* prevents zoom on iPhone */
+  }
+}
+
+@media (max-width: 600px){
+  body{
+    padding:10px;
+  }
+
+  .grid{
+    grid-template-columns:95px repeat(7, minmax(84px, 1fr)) 135px;
+    min-width:860px;
+  }
+
+  .cell{
+    padding:6px;
+    min-height:68px;
+  }
+
+  .week-cell{
+    font-size:16px;
+  }
+
+  .week-cell div div:last-child{
+    font-size:11px !important;
+  }
+
+  .side-cell{
+    font-size:13px;
+  }
+
+  .header-cell,
+  .notes-head{
+    font-size:12px;
+  }
+
+  .shift-title{
+    font-size:12px;
+  }
+
+  .shift-text{
+    font-size:10px;
+  }
+
+  .notes-box{
+    font-size:11px;
+    max-height:150px;
+  }
+
+  .day-wrap{
+    gap:4px;
+  }
+
+  .day-badge{
+    font-size:9px;
+    padding:2px 6px;
+  }
+}
 </style>
 </head>
 <body>
