@@ -42,6 +42,12 @@ label.radio{display:block;margin:8px 0}
 </style>
 </head>
 <body>
+  <div id="lockscreen" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f4f7fb;z-index:9999;">
+  <h2 style="margin-bottom:12px;color:#1f2937;">Enter Access Code</h2>
+  <input type="password" id="pinInput" placeholder="Code" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:1rem;">
+  <button id="pinBtn" style="margin-top:12px;padding:10px 16px;border:none;border-radius:10px;background:#3b82f6;color:#fff;font-size:1rem;cursor:pointer;">Unlock</button>
+  <p id="pinMsg" style="color:#dc2626;margin-top:10px;display:none;">Wrong code</p>
+</div>
 <div id="scheduleView">
   <div class="header">
     <h1>Shift Planner</h1>
@@ -135,253 +141,427 @@ label.radio{display:block;margin:8px 0}
   </div>
 </div>
 
-<script>
-const weekMonths = {
-  14:'April',
-  15:'April',
-  16:'April',
-  17:'April',
-  18:'May',
-  19:'May',
-  20:'May',
-  21:'May'
-};
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const weeks = {
-  14: ['Mon 30','Tue 31','Wed 01','Thu 02','Fri 03','Sat 04','Sun 05'],
-  15: ['Mon 06','Tue 07','Wed 08','Thu 09','Fri 10','Sat 11','Sun 12'],
-  16: ['Mon 13','Tue 14','Wed 15','Thu 16','Fri 17','Sat 18','Sun 19'],
-  17: ['Mon 20','Tue 21','Wed 22','Thu 23','Fri 24','Sat 25','Sun 26'],
-  18: ['Mon 27','Tue 28','Wed 29','Thu 30','Fri 01','Sat 02','Sun 03'],
-  19: ['Mon 04','Tue 05','Wed 06','Thu 07','Fri 08','Sat 09','Sun 10'],
-  20: ['Mon 11','Tue 12','Wed 13','Thu 14','Fri 15','Sat 16','Sun 17'],
-  21: ['Mon 18','Tue 19','Wed 20','Thu 21','Fri 22','Sat 23','Sun 24']
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyCenPiFOZwK-MvaU4gXF5WUTmo6FKCrvvU",
+    authDomain: "shift-plan-1937f.firebaseapp.com",
+    projectId: "shift-plan-1937f",
+    storageBucket: "shift-plan-1937f.firebasestorage.app",
+    messagingSenderId: "216804667695",
+    appId: "1:216804667695:web:3903add223aa8a61dfb1da",
+    measurementId: "G-13H1P0K1XD"
+  };
 
-const templateVersions = {
-  A:[{startWeek:14,data:{title:'Shift A',text:'JM / CQ\nFD (AJ)',color:'shift-a'}}],
-  B:[{startWeek:14,data:{title:'Shift B',text:'AL / ML\nJN',color:'shift-b'}}],
-  C:[{startWeek:14,data:{title:'Shift C',text:'AM /\nBW / SMcT',color:'shift-c'}}],
-  D:[{startWeek:14,data:{title:'Shift D',text:'PM / ED\nBS (MI)',color:'shift-d'}}]
-};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-const weekNotes = {};
-const dayTypes = {};
-Object.keys(weeks).forEach(w => {
-  weekNotes[w] = '';
-  dayTypes[w] = Array(7).fill('normal');
-});
-const cellOverrides = {};
-const rowLabels = ['Days','Nights','Days','Nights'];
+  const ROLE_PINS = { "2906": "engineer", "1782": "admin" };
 
-function weekPattern(week){
-  const phase = (week - 14) % 4;
-  if(phase === 0) return [
-    ['','','A','A','','',''],
-    ['','','B','B','','',''],
-    ['D','D','','','C','C','C'],
-    ['C','C','','','D','D','D']
-  ];
-  if(phase === 1) return [
-    ['B','B','','','A','A','A'],
-    ['A','A','','','B','B','B'],
-    ['','','D','D','','',''],
-    ['','','C','C','','','']
-  ];
-  if(phase === 2) return [
-    ['','','B','B','','',''],
-    ['','','A','A','','',''],
-    ['C','C','','','D','D','D'],
-    ['D','D','','','C','C','C']
-  ];
-  return [
-    ['A','A','','','B','B','B'],
-    ['B','B','','','A','A','A'],
-    ['','','C','C','','',''],
-    ['','','D','D','','','']
-  ];
-}
+  const lockscreen = document.getElementById("lockscreen");
+  const pinInput = document.getElementById("pinInput");
+  const pinBtn = document.getElementById("pinBtn");
+  const pinMsg = document.getElementById("pinMsg");
 
-function cloneData(obj){ return JSON.parse(JSON.stringify(obj)); }
-function getTemplateForWeek(code, week){
-  const versions = templateVersions[code] || [];
-  let current = cloneData(versions[0].data);
-  versions.forEach(v => { if(v.startWeek <= week) current = cloneData(v.data); });
-  return current;
-}
-function getCellData(week, rowIndex, colIndex, code){
-  const key = `${week}-${rowIndex}-${colIndex}`;
-  if(cellOverrides[key]) return cloneData(cellOverrides[key]);
-  return getTemplateForWeek(code, week);
-}
+  function getRole() {
+    return sessionStorage.getItem("shiftRole") || "";
+  }
 
-const tables = document.getElementById('tables');
-const cards = document.getElementById('cards');
-const scheduleView = document.getElementById('scheduleView');
-const editorView = document.getElementById('editorView');
-const modal = document.getElementById('modal');
-const applyModal = document.getElementById('applyModal');
-const dayModal = document.getElementById('dayModal');
-const notesModal = document.getElementById('notesModal');
-const cellModal = document.getElementById('cellModal');
-const editTemplatesBtn = document.getElementById('editTemplatesBtn');
-const backBtn = document.getElementById('backBtn');
-const cancelBtn = document.getElementById('cancelBtn');
-const saveBtn = document.getElementById('saveBtn');
-const cancelApplyBtn = document.getElementById('cancelApplyBtn');
-const confirmApplyBtn = document.getElementById('confirmApplyBtn');
-const cancelDayBtn = document.getElementById('cancelDayBtn');
-const saveDayBtn = document.getElementById('saveDayBtn');
-const cancelNotesBtn = document.getElementById('cancelNotesBtn');
-const saveNotesBtn = document.getElementById('saveNotesBtn');
-const cancelCellBtn = document.getElementById('cancelCellBtn');
-const saveCellBtn = document.getElementById('saveCellBtn');
-const titleInput = document.getElementById('titleInput');
-const textInput = document.getElementById('textInput');
-const colorInput = document.getElementById('colorInput');
-const applyWeekInput = document.getElementById('applyWeekInput');
-const dayModalLabel = document.getElementById('dayModalLabel');
-const notesModalLabel = document.getElementById('notesModalLabel');
-const notesInput = document.getElementById('notesInput');
-const cellTitleInput = document.getElementById('cellTitleInput');
-const cellTextInput = document.getElementById('cellTextInput');
-const cellColorInput = document.getElementById('cellColorInput');
+  function isAdmin() {
+    return getRole() === "admin";
+  }
 
-Object.keys(weeks).forEach(w => {
-  const opt = document.createElement('option');
-  opt.value = w;
-  opt.textContent = `Week ${w}`;
-  applyWeekInput.appendChild(opt);
-});
+  function isEngineer() {
+    return getRole() === "engineer";
+  }
 
-let activeShift = 'A';
-let pendingTemplateData = null;
-let activeDayWeek = null;
-let activeDayIndex = null;
-let activeNotesWeek = null;
-let activeCellKey = null;
+  function unlock(role) {
+    sessionStorage.setItem("shiftRole", role);
+    lockscreen.style.display = "none";
+    updatePermissions();
+    startRealtimeSync();
+  }
 
-function renderWeekTable(weekNumber, days){
-  const pattern = weekPattern(weekNumber);
-  let html = `<div class="table-card"><div class="grid">`;
-  html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
-  days.forEach((day, dayIndex) => {
-    const type = dayTypes[weekNumber][dayIndex];
-    const defrost = type !== 'normal';
-    const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
-    html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
+  function checkPin() {
+    const value = (pinInput.value || "").trim();
+    const role = ROLE_PINS[value];
+    if (role) {
+      pinMsg.style.display = "none";
+      unlock(role);
+    } else {
+      pinMsg.style.display = "block";
+    }
+  }
+
+  pinBtn.addEventListener("click", checkPin);
+  pinInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") checkPin();
   });
-  html += `<div class="cell notes-head" data-notes-week="${weekNumber}">Week Notes</div>`;
 
-  pattern.forEach((row, rowIndex) => {
-    html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
-    row.forEach((code, colIndex) => {
-      if(!code){
-        html += `<div class="cell empty"></div>`;
-      } else {
-        const shift = getCellData(weekNumber, rowIndex, colIndex, code);
-        html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div></div>`;
+  if (sessionStorage.getItem("shiftRole")) {
+    unlock(sessionStorage.getItem("shiftRole"));
+  }
+
+  const weekMonths = {
+    14:'April',
+    15:'April',
+    16:'April',
+    17:'April',
+    18:'May',
+    19:'May',
+    20:'May',
+    21:'May'
+  };
+
+  const weeks = {
+    14: ['Mon 30','Tue 31','Wed 01','Thu 02','Fri 03','Sat 04','Sun 05'],
+    15: ['Mon 06','Tue 07','Wed 08','Thu 09','Fri 10','Sat 11','Sun 12'],
+    16: ['Mon 13','Tue 14','Wed 15','Thu 16','Fri 17','Sat 18','Sun 19'],
+    17: ['Mon 20','Tue 21','Wed 22','Thu 23','Fri 24','Sat 25','Sun 26'],
+    18: ['Mon 27','Tue 28','Wed 29','Thu 30','Fri 01','Sat 02','Sun 03'],
+    19: ['Mon 04','Tue 05','Wed 06','Thu 07','Fri 08','Sat 09','Sun 10'],
+    20: ['Mon 11','Tue 12','Wed 13','Thu 14','Fri 15','Sat 16','Sun 17'],
+    21: ['Mon 18','Tue 19','Wed 20','Thu 21','Fri 22','Sat 23','Sun 24']
+  };
+
+  const defaultTemplateVersions = {
+    A:[{startWeek:14,data:{title:'Shift A',text:'JM / CQ\\nFD (AJ)',color:'shift-a'}}],
+    B:[{startWeek:14,data:{title:'Shift B',text:'AL / ML\\nJN',color:'shift-b'}}],
+    C:[{startWeek:14,data:{title:'Shift C',text:'AM /\\nBW / SMcT',color:'shift-c'}}],
+    D:[{startWeek:14,data:{title:'Shift D',text:'PM / ED\\nBS (MI)',color:'shift-d'}}]
+  };
+
+  const defaultWeekNotes = {};
+  const defaultDayTypes = {};
+  Object.keys(weeks).forEach(w => {
+    defaultWeekNotes[w] = '';
+    defaultDayTypes[w] = Array(7).fill('normal');
+  });
+
+  let templateVersions = JSON.parse(JSON.stringify(defaultTemplateVersions));
+  let weekNotes = JSON.parse(JSON.stringify(defaultWeekNotes));
+  let dayTypes = JSON.parse(JSON.stringify(defaultDayTypes));
+  let cellOverrides = {};
+
+  const rowLabels = ['Days','Nights','Days','Nights'];
+
+  const tables = document.getElementById('tables');
+  const cards = document.getElementById('cards');
+  const scheduleView = document.getElementById('scheduleView');
+  const editorView = document.getElementById('editorView');
+  const modal = document.getElementById('modal');
+  const applyModal = document.getElementById('applyModal');
+  const dayModal = document.getElementById('dayModal');
+  const notesModal = document.getElementById('notesModal');
+  const cellModal = document.getElementById('cellModal');
+  const editTemplatesBtn = document.getElementById('editTemplatesBtn');
+  const backBtn = document.getElementById('backBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const cancelApplyBtn = document.getElementById('cancelApplyBtn');
+  const confirmApplyBtn = document.getElementById('confirmApplyBtn');
+  const cancelDayBtn = document.getElementById('cancelDayBtn');
+  const saveDayBtn = document.getElementById('saveDayBtn');
+  const cancelNotesBtn = document.getElementById('cancelNotesBtn');
+  const saveNotesBtn = document.getElementById('saveNotesBtn');
+  const cancelCellBtn = document.getElementById('cancelCellBtn');
+  const saveCellBtn = document.getElementById('saveCellBtn');
+  const titleInput = document.getElementById('titleInput');
+  const textInput = document.getElementById('textInput');
+  const colorInput = document.getElementById('colorInput');
+  const applyWeekInput = document.getElementById('applyWeekInput');
+  const dayModalLabel = document.getElementById('dayModalLabel');
+  const notesModalLabel = document.getElementById('notesModalLabel');
+  const notesInput = document.getElementById('notesInput');
+  const cellTitleInput = document.getElementById('cellTitleInput');
+  const cellTextInput = document.getElementById('cellTextInput');
+  const cellColorInput = document.getElementById('cellColorInput');
+
+  applyWeekInput.innerHTML = "";
+  Object.keys(weeks).forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = `Week ${w}`;
+    applyWeekInput.appendChild(opt);
+  });
+
+  let activeShift = 'A';
+  let pendingTemplateData = null;
+  let activeDayWeek = null;
+  let activeDayIndex = null;
+  let activeNotesWeek = null;
+  let activeCellKey = null;
+  let isApplyingRemote = false;
+  let unsubscribePlanner = null;
+
+  function weekPattern(week){
+    const phase = (week - 14) % 4;
+    if(phase === 0) return [
+      ['','','A','A','','',''],
+      ['','','B','B','','',''],
+      ['D','D','','','C','C','C'],
+      ['C','C','','','D','D','D']
+    ];
+    if(phase === 1) return [
+      ['B','B','','','A','A','A'],
+      ['A','A','','','B','B','B'],
+      ['','','D','D','','',''],
+      ['','','C','C','','','']
+    ];
+    if(phase === 2) return [
+      ['','','B','B','','',''],
+      ['','','A','A','','',''],
+      ['C','C','','','D','D','D'],
+      ['D','D','','','C','C','C']
+    ];
+    return [
+      ['A','A','','','B','B','B'],
+      ['B','B','','','A','A','A'],
+      ['','','C','C','','',''],
+      ['','','D','D','','','']
+    ];
+  }
+
+  function cloneData(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function getTemplateForWeek(code, week){
+    const versions = templateVersions[code] || [];
+    let current = cloneData(versions[0].data);
+    versions.forEach(v => {
+      if (v.startWeek <= week) current = cloneData(v.data);
+    });
+    return current;
+  }
+
+  function getCellData(week, rowIndex, colIndex, code){
+    const key = `${week}-${rowIndex}-${colIndex}`;
+    if (cellOverrides[key]) return cloneData(cellOverrides[key]);
+    return getTemplateForWeek(code, week);
+  }
+
+  function getPlannerState(){
+    return {
+      templateVersions: cloneData(templateVersions),
+      weekNotes: cloneData(weekNotes),
+      dayTypes: cloneData(dayTypes),
+      cellOverrides: cloneData(cellOverrides),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async function savePlannerState(){
+    if (!isAdmin() || isApplyingRemote) return;
+    try {
+      await setDoc(doc(db, "shiftPlanner", "main"), getPlannerState());
+      console.log("Planner state saved");
+    } catch (err) {
+      console.error("Planner save failed", err);
+    }
+  }
+
+  function applyPlannerState(data){
+    isApplyingRemote = true;
+
+    templateVersions = data?.templateVersions ? cloneData(data.templateVersions) : cloneData(defaultTemplateVersions);
+    weekNotes = data?.weekNotes ? cloneData(data.weekNotes) : cloneData(defaultWeekNotes);
+    dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
+    cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
+
+    renderSchedule();
+    if (editorView.style.display === "block") renderEditor();
+
+    isApplyingRemote = false;
+  }
+
+  function startRealtimeSync(){
+    if (unsubscribePlanner) return;
+    unsubscribePlanner = onSnapshot(doc(db, "shiftPlanner", "main"), async (snap) => {
+      if (!snap.exists()) {
+        if (isAdmin()) {
+          await setDoc(doc(db, "shiftPlanner", "main"), getPlannerState());
+        }
+        return;
+      }
+      applyPlannerState(snap.data());
+    });
+  }
+
+  function updatePermissions(){
+    editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
+  }
+
+  function renderWeekTable(weekNumber, days){
+    const pattern = weekPattern(weekNumber);
+    let html = `<div class="table-card"><div class="grid">`;
+    html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
+
+    days.forEach((day, dayIndex) => {
+      const type = dayTypes[weekNumber][dayIndex];
+      const defrost = type !== 'normal';
+      const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
+      html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
+    });
+
+    html += `<div class="cell notes-head" data-notes-week="${weekNumber}">Week Notes</div>`;
+
+    pattern.forEach((row, rowIndex) => {
+      html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
+      row.forEach((code, colIndex) => {
+        if(!code){
+          html += `<div class="cell empty"></div>`;
+        } else {
+          const shift = getCellData(weekNumber, rowIndex, colIndex, code);
+          html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\\n/g,'<br>')}</div></div></div>`;
+        }
+      });
+
+      if(rowIndex === 0){
+        const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
+        html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\\n/g,'<br>')}</div></div>`;
       }
     });
-    if(rowIndex === 0){
-      const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
-      html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\n/g,'<br>')}</div></div>`;
+
+    html += `</div></div>`;
+    return html;
+  }
+
+  function bindClicks(){
+    document.querySelectorAll('.shift[data-week]').forEach(el => {
+      el.onclick = () => {
+        if (!isAdmin()) return;
+        activeCellKey = `${el.dataset.week}-${el.dataset.row}-${el.dataset.col}`;
+        const current = getCellData(+el.dataset.week, +el.dataset.row, +el.dataset.col, el.dataset.code);
+        cellTitleInput.value = current.title;
+        cellTextInput.value = current.text;
+        cellColorInput.value = current.color;
+        cellModal.style.display = 'flex';
+      };
+    });
+
+    document.querySelectorAll('[data-day-week]').forEach(el => {
+      el.onclick = () => {
+        if (!isAdmin()) return;
+        activeDayWeek = +el.dataset.dayWeek;
+        activeDayIndex = +el.dataset.dayIndex;
+        dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
+        const current = dayTypes[activeDayWeek][activeDayIndex];
+        document.querySelectorAll('input[name="dayType"]').forEach(r => r.checked = (r.value === current));
+        dayModal.style.display = 'flex';
+      };
+    });
+
+    document.querySelectorAll('[data-notes-week]').forEach(el => {
+      el.onclick = () => {
+        if (!isAdmin()) return;
+        activeNotesWeek = +el.dataset.notesWeek;
+        notesModalLabel.textContent = `Week ${activeNotesWeek}`;
+        notesInput.value = weekNotes[activeNotesWeek] || '';
+        notesModal.style.display = 'flex';
+      };
+    });
+  }
+
+  function renderSchedule(){
+    tables.innerHTML = Object.entries(weeks).map(([week,days]) => renderWeekTable(+week, days)).join('');
+    bindClicks();
+  }
+
+  function renderEditor(){
+    cards.innerHTML = '';
+    Object.keys(templateVersions).forEach(key => {
+      const shift = getTemplateForWeek(key, 14);
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `<div class="day">${shift.title}</div><div class="shift ${shift.color}" style="margin-bottom:12px"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\\n/g,'<br>')}</div></div><div class="small">Click to edit this template.</div>`;
+      el.onclick = () => {
+        if (!isAdmin()) return;
+        activeShift = key;
+        titleInput.value = shift.title;
+        textInput.value = shift.text;
+        colorInput.value = shift.color;
+        modal.style.display = 'flex';
+      };
+      cards.appendChild(el);
+    });
+  }
+
+  editTemplatesBtn.onclick = () => {
+    if (!isAdmin()) return;
+    scheduleView.style.display='none';
+    editorView.style.display='block';
+    renderEditor();
+  };
+
+  backBtn.onclick = () => {
+    editorView.style.display='none';
+    scheduleView.style.display='block';
+    renderSchedule();
+  };
+
+  cancelBtn.onclick = () => { modal.style.display='none'; };
+  saveBtn.onclick = () => {
+    pendingTemplateData = { title:titleInput.value, text:textInput.value, color:colorInput.value };
+    modal.style.display='none';
+    applyModal.style.display='flex';
+  };
+
+  cancelApplyBtn.onclick = () => {
+    applyModal.style.display='none';
+    pendingTemplateData = null;
+  };
+
+  confirmApplyBtn.onclick = async () => {
+    const startWeek = +applyWeekInput.value;
+    templateVersions[activeShift].push({ startWeek, data: cloneData(pendingTemplateData) });
+    templateVersions[activeShift].sort((a,b) => a.startWeek - b.startWeek);
+    pendingTemplateData = null;
+    applyModal.style.display='none';
+    renderEditor();
+    renderSchedule();
+    await savePlannerState();
+  };
+
+  cancelDayBtn.onclick = () => { dayModal.style.display='none'; };
+  saveDayBtn.onclick = async () => {
+    const selected = document.querySelector('input[name="dayType"]:checked');
+    if(selected && activeDayWeek !== null){
+      dayTypes[activeDayWeek][activeDayIndex] = selected.value;
     }
-  });
+    dayModal.style.display='none';
+    renderSchedule();
+    await savePlannerState();
+  };
 
-  html += `</div></div>`;
-  return html;
-}
+  cancelNotesBtn.onclick = () => { notesModal.style.display='none'; };
+  saveNotesBtn.onclick = async () => {
+    if(activeNotesWeek !== null){
+      weekNotes[activeNotesWeek] = notesInput.value;
+    }
+    notesModal.style.display='none';
+    renderSchedule();
+    await savePlannerState();
+  };
 
-function bindClicks(){
-  document.querySelectorAll('.shift[data-week]').forEach(el => {
-    el.onclick = () => {
-      activeCellKey = `${el.dataset.week}-${el.dataset.row}-${el.dataset.col}`;
-      const current = getCellData(+el.dataset.week, +el.dataset.row, +el.dataset.col, el.dataset.code);
-      cellTitleInput.value = current.title;
-      cellTextInput.value = current.text;
-      cellColorInput.value = current.color;
-      cellModal.style.display = 'flex';
-    };
-  });
-  document.querySelectorAll('[data-day-week]').forEach(el => {
-    el.onclick = () => {
-      activeDayWeek = +el.dataset.dayWeek;
-      activeDayIndex = +el.dataset.dayIndex;
-      dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
-      const current = dayTypes[activeDayWeek][activeDayIndex];
-      document.querySelectorAll('input[name="dayType"]').forEach(r => r.checked = (r.value === current));
-      dayModal.style.display = 'flex';
-    };
-  });
-  document.querySelectorAll('[data-notes-week]').forEach(el => {
-    el.onclick = () => {
-      activeNotesWeek = +el.dataset.notesWeek;
-      notesModalLabel.textContent = `Week ${activeNotesWeek}`;
-      notesInput.value = weekNotes[activeNotesWeek] || '';
-      notesModal.style.display = 'flex';
-    };
-  });
-}
+  cancelCellBtn.onclick = () => { cellModal.style.display='none'; };
+  saveCellBtn.onclick = async () => {
+    if(activeCellKey){
+      cellOverrides[activeCellKey] = {
+        title: cellTitleInput.value,
+        text: cellTextInput.value,
+        color: cellColorInput.value
+      };
+    }
+    cellModal.style.display='none';
+    renderSchedule();
+    await savePlannerState();
+  };
 
-function renderSchedule(){
-  tables.innerHTML = Object.entries(weeks).map(([week,days]) => renderWeekTable(+week, days)).join('');
-  bindClicks();
-}
-
-function renderEditor(){
-  cards.innerHTML = '';
-  Object.keys(templateVersions).forEach(key => {
-    const shift = getTemplateForWeek(key, 14);
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.innerHTML = `<div class="day">${shift.title}</div><div class="shift ${shift.color}" style="margin-bottom:12px"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div><div class="small">Click to edit this template.</div>`;
-    el.onclick = () => {
-      activeShift = key;
-      titleInput.value = shift.title;
-      textInput.value = shift.text;
-      colorInput.value = shift.color;
-      modal.style.display = 'flex';
-    };
-    cards.appendChild(el);
-  });
-}
-
-editTemplatesBtn.onclick = () => { scheduleView.style.display='none'; editorView.style.display='block'; renderEditor(); };
-backBtn.onclick = () => { editorView.style.display='none'; scheduleView.style.display='block'; renderSchedule(); };
-cancelBtn.onclick = () => { modal.style.display='none'; };
-saveBtn.onclick = () => { pendingTemplateData = { title:titleInput.value, text:textInput.value, color:colorInput.value }; modal.style.display='none'; applyModal.style.display='flex'; };
-cancelApplyBtn.onclick = () => { applyModal.style.display='none'; pendingTemplateData = null; };
-confirmApplyBtn.onclick = () => {
-  const startWeek = +applyWeekInput.value;
-  templateVersions[activeShift].push({ startWeek, data: cloneData(pendingTemplateData) });
-  templateVersions[activeShift].sort((a,b) => a.startWeek - b.startWeek);
-  pendingTemplateData = null;
-  applyModal.style.display='none';
-  renderEditor();
   renderSchedule();
-};
-cancelDayBtn.onclick = () => { dayModal.style.display='none'; };
-saveDayBtn.onclick = () => {
-  const selected = document.querySelector('input[name="dayType"]:checked');
-  if(selected && activeDayWeek !== null) dayTypes[activeDayWeek][activeDayIndex] = selected.value;
-  dayModal.style.display='none';
-  renderSchedule();
-};
-cancelNotesBtn.onclick = () => { notesModal.style.display='none'; };
-saveNotesBtn.onclick = () => {
-  if(activeNotesWeek !== null) weekNotes[activeNotesWeek] = notesInput.value;
-  notesModal.style.display='none';
-  renderSchedule();
-};
-cancelCellBtn.onclick = () => { cellModal.style.display='none'; };
-saveCellBtn.onclick = () => {
-  if(activeCellKey) cellOverrides[activeCellKey] = { title:cellTitleInput.value, text:cellTextInput.value, color:cellColorInput.value };
-  cellModal.style.display='none';
-  renderSchedule();
-};
-
-renderSchedule();
+  updatePermissions();
 </script>
 </body>
 </html>
