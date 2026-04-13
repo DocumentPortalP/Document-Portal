@@ -13,7 +13,21 @@ button.secondary{background:#e5e7eb;color:#111827}
 .tables{display:grid;gap:24px}
 .table-card,.editor{background:#fff;border:1px solid #dbe2ea;border-radius:24px;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.08)}
 .editor{display:none;padding:24px}
-.grid{display:grid;grid-template-columns:140px repeat(7,minmax(100px,1fr)) 180px;min-width:1120px}
+
+/* NORMAL GRID = with notes */
+.grid{
+  display:grid;
+  grid-template-columns:140px repeat(7,minmax(100px,1fr)) 180px;
+  min-width:1120px;
+}
+
+/* ENGINEER GRID = no notes */
+.grid-no-notes{
+  display:grid;
+  grid-template-columns:140px repeat(7,minmax(100px,1fr));
+  min-width:940px;
+}
+
 .cell{padding:10px;border-right:1px solid #dbe2ea;border-bottom:1px solid #dbe2ea;min-height:84px;box-sizing:border-box;background:#fff}
 .header-cell,.week-cell,.side-cell,.notes-head{background:#b9c5d4;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center}
 .week-cell{justify-content:flex-start;font-size:22px;padding-left:14px}
@@ -39,7 +53,8 @@ button.secondary{background:#e5e7eb;color:#111827}
 input,textarea,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:12px;box-sizing:border-box;font:inherit}
 .actions{display:flex;justify-content:flex-end;gap:10px}
 label.radio{display:block;margin:8px 0}
-  /* ===== Mobile improvements ===== */
+
+/* ===== Mobile improvements ===== */
 @media (max-width: 900px){
   body{
     padding:14px;
@@ -71,10 +86,11 @@ label.radio{display:block;margin:8px 0}
     grid-template-columns:110px repeat(7, minmax(92px, 1fr)) 150px;
     min-width:980px;
   }
+
   .grid-no-notes{
-  grid-template-columns:140px repeat(7,minmax(100px,1fr));
-  min-width:940px;
-}
+    grid-template-columns:110px repeat(7, minmax(92px, 1fr));
+    min-width:800px;
+  }
 
   .cell{
     padding:8px;
@@ -137,7 +153,7 @@ label.radio{display:block;margin:8px 0}
   }
 
   input, textarea, select{
-    font-size:16px; /* prevents zoom on iPhone */
+    font-size:16px;
   }
 }
 
@@ -149,6 +165,11 @@ label.radio{display:block;margin:8px 0}
   .grid{
     grid-template-columns:95px repeat(7, minmax(84px, 1fr)) 135px;
     min-width:860px;
+  }
+
+  .grid-no-notes{
+    grid-template-columns:95px repeat(7, minmax(84px, 1fr));
+    min-width:700px;
   }
 
   .cell{
@@ -195,7 +216,8 @@ label.radio{display:block;margin:8px 0}
     padding:2px 6px;
   }
 }
-  .header{
+
+.header{
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -227,7 +249,8 @@ label.radio{display:block;margin:8px 0}
     grid-template-columns:1fr;
   }
 }
-  #homeBtn{
+
+#homeBtn{
   background:#e5e7eb;
   color:#111827;
   font-weight:700;
@@ -241,124 +264,123 @@ label.radio{display:block;margin:8px 0}
 </head>
 <body>
   <div id="lockscreen" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f4f7fb;z-index:9999;">
-  <h2 style="margin-bottom:12px;color:#1f2937;">Enter Access Code</h2>
-  <input type="password" id="pinInput" placeholder="Code" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:1rem;">
-  <button id="pinBtn" style="margin-top:12px;padding:10px 16px;border:none;border-radius:10px;background:#3b82f6;color:#fff;font-size:1rem;cursor:pointer;">Unlock</button>
-  <p id="pinMsg" style="color:#dc2626;margin-top:10px;display:none;">Wrong code</p>
-</div>
-<div id="scheduleView">
-  <div class="header">
-    <h1>Shift Planner</h1>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-  <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
-    Home
-  </a>
-
-  <button id="editTemplatesBtn">Edit Shift Templates</button>
-</div>
-  </div>
-  <div class="tables" id="tables"></div>
-</div>
-
-<div id="editorView" class="editor">
-  <div class="header">
-    <div>
-      <h2>Edit Shift Templates</h2>
-      <div class="small">Edit Shift A, B, C and D. You can choose from which week the change should apply.</div>
-    </div>
-    <button id="backBtn" class="secondary">Back</button>
+    <h2 style="margin-bottom:12px;color:#1f2937;">Enter Access Code</h2>
+    <input type="password" id="pinInput" placeholder="Code" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:1rem;">
+    <button id="pinBtn" style="margin-top:12px;padding:10px 16px;border:none;border-radius:10px;background:#3b82f6;color:#fff;font-size:1rem;cursor:pointer;">Unlock</button>
+    <p id="pinMsg" style="color:#dc2626;margin-top:10px;display:none;">Wrong code</p>
   </div>
 
-  <div id="editorLayout">
-    <div>
-      <div id="cards" class="cards"></div>
+  <div id="scheduleView">
+    <div class="header">
+      <h1>Shift Planner</h1>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
+          Home
+        </a>
+        <button id="editTemplatesBtn">Edit Shift Templates</button>
+      </div>
+    </div>
+    <div class="tables" id="tables"></div>
+  </div>
+
+  <div id="editorView" class="editor">
+    <div class="header">
+      <div>
+        <h2>Edit Shift Templates</h2>
+        <div class="small">Edit Shift A, B, C and D. You can choose from which week the change should apply.</div>
+      </div>
+      <button id="backBtn" class="secondary">Back</button>
     </div>
 
-    <div class="card" style="cursor:default">
-      <div class="day">Possible Covers</div>
-      <div class="small" style="margin-bottom:10px">Write all engineers who can potentially cover shifts.</div>
-      <textarea id="possibleCoversInput" rows="14" placeholder="
-"></textarea>
-      <div class="actions">
-        <button id="savePossibleCoversBtn">Save</button>
+    <div id="editorLayout">
+      <div>
+        <div id="cards" class="cards"></div>
+      </div>
+
+      <div class="card" style="cursor:default">
+        <div class="day">Possible Covers</div>
+        <div class="small" style="margin-bottom:10px">Write all engineers who can potentially cover shifts.</div>
+        <textarea id="possibleCoversInput" rows="14" placeholder=""></textarea>
+        <div class="actions">
+          <button id="savePossibleCoversBtn">Save</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div id="modal">
-  <div class="modal-box">
-    <h3>Edit Shift Template</h3>
-    <input id="titleInput" placeholder="Shift title">
-    <textarea id="textInput" rows="4" placeholder="Engineer initials"></textarea>
-    <select id="colorInput">
-      <option value="shift-a">Shift A colour</option>
-      <option value="shift-b">Shift B colour</option>
-      <option value="shift-c">Shift C colour</option>
-      <option value="shift-d">Shift D colour</option>
-    </select>
-    <div class="small">After Save, choose from which week this template change starts.</div>
-    <div class="actions">
-      <button id="cancelBtn" class="secondary">Cancel</button>
-      <button id="saveBtn">Save</button>
+  <div id="modal">
+    <div class="modal-box">
+      <h3>Edit Shift Template</h3>
+      <input id="titleInput" placeholder="Shift title">
+      <textarea id="textInput" rows="4" placeholder="Engineer initials"></textarea>
+      <select id="colorInput">
+        <option value="shift-a">Shift A colour</option>
+        <option value="shift-b">Shift B colour</option>
+        <option value="shift-c">Shift C colour</option>
+        <option value="shift-d">Shift D colour</option>
+      </select>
+      <div class="small">After Save, choose from which week this template change starts.</div>
+      <div class="actions">
+        <button id="cancelBtn" class="secondary">Cancel</button>
+        <button id="saveBtn">Save</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="applyModal">
-  <div class="modal-box">
-    <h3>Apply Template Change</h3>
-    <select id="applyWeekInput"></select>
-    <div class="actions">
-      <button id="cancelApplyBtn" class="secondary">Cancel</button>
-      <button id="confirmApplyBtn">Apply</button>
+  <div id="applyModal">
+    <div class="modal-box">
+      <h3>Apply Template Change</h3>
+      <select id="applyWeekInput"></select>
+      <div class="actions">
+        <button id="cancelApplyBtn" class="secondary">Cancel</button>
+        <button id="confirmApplyBtn">Apply</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="dayModal">
-  <div class="modal-box">
-    <h3>Edit Day Type</h3>
-    <div class="small" id="dayModalLabel" style="margin-bottom:12px"></div>
-    <label class="radio"><input type="radio" name="dayType" value="normal"> Normal day</label>
-    <label class="radio"><input type="radio" name="dayType" value="site1"> Site 1 Defrost</label>
-    <label class="radio"><input type="radio" name="dayType" value="site2"> Site 2 Defrost</label>
-    <div class="actions">
-      <button id="cancelDayBtn" class="secondary">Cancel</button>
-      <button id="saveDayBtn">Save</button>
+  <div id="dayModal">
+    <div class="modal-box">
+      <h3>Edit Day Type</h3>
+      <div class="small" id="dayModalLabel" style="margin-bottom:12px"></div>
+      <label class="radio"><input type="radio" name="dayType" value="normal"> Normal day</label>
+      <label class="radio"><input type="radio" name="dayType" value="site1"> Site 1 Defrost</label>
+      <label class="radio"><input type="radio" name="dayType" value="site2"> Site 2 Defrost</label>
+      <div class="actions">
+        <button id="cancelDayBtn" class="secondary">Cancel</button>
+        <button id="saveDayBtn">Save</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="notesModal">
-  <div class="modal-box">
-    <h3>Edit Week Notes</h3>
-    <div class="small" id="notesModalLabel" style="margin-bottom:12px"></div>
-    <textarea id="notesInput" rows="6" placeholder="Weekly notes"></textarea>
-    <div class="actions">
-      <button id="cancelNotesBtn" class="secondary">Cancel</button>
-      <button id="saveNotesBtn">Save</button>
+  <div id="notesModal">
+    <div class="modal-box">
+      <h3>Edit Week Notes</h3>
+      <div class="small" id="notesModalLabel" style="margin-bottom:12px"></div>
+      <textarea id="notesInput" rows="6" placeholder="Weekly notes"></textarea>
+      <div class="actions">
+        <button id="cancelNotesBtn" class="secondary">Cancel</button>
+        <button id="saveNotesBtn">Save</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="cellModal">
-  <div class="modal-box">
-    <h3>Edit Single Shift Cell</h3>
-    <input id="cellTitleInput" placeholder="Shift title">
-    <textarea id="cellTextInput" rows="4" placeholder="Engineer initials"></textarea>
-    <select id="cellColorInput">
-      <option value="shift-a">Shift A colour</option>
-      <option value="shift-b">Shift B colour</option>
-      <option value="shift-c">Shift C colour</option>
-      <option value="shift-d">Shift D colour</option>
-    </select>
-    <div class="actions">
-      <button id="cancelCellBtn" class="secondary">Cancel</button>
-      <button id="saveCellBtn">Save</button>
+  <div id="cellModal">
+    <div class="modal-box">
+      <h3>Edit Single Shift Cell</h3>
+      <input id="cellTitleInput" placeholder="Shift title">
+      <textarea id="cellTextInput" rows="4" placeholder="Engineer initials"></textarea>
+      <select id="cellColorInput">
+        <option value="shift-a">Shift A colour</option>
+        <option value="shift-b">Shift B colour</option>
+        <option value="shift-c">Shift C colour</option>
+        <option value="shift-d">Shift D colour</option>
+      </select>
+      <div class="actions">
+        <button id="cancelCellBtn" class="secondary">Cancel</button>
+        <button id="saveCellBtn">Save</button>
+      </div>
     </div>
   </div>
-</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -383,8 +405,8 @@ label.radio{display:block;margin:8px 0}
   const pinInput = document.getElementById("pinInput");
   const pinBtn = document.getElementById("pinBtn");
   const pinMsg = document.getElementById("pinMsg");
-  const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-let logoutTimer = null;
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+  let logoutTimer = null;
 
   function getRole() {
     return sessionStorage.getItem("shiftRole") || "";
@@ -405,24 +427,25 @@ let logoutTimer = null;
     startRealtimeSync();
     resetLogoutTimer();
   }
+
   function resetLogoutTimer() {
-  if (!getRole()) return;
+    if (!getRole()) return;
 
-  clearTimeout(logoutTimer);
-  logoutTimer = setTimeout(() => {
-    sessionStorage.removeItem("shiftRole");
-    alert("Session expired. Please log in again.");
-    location.reload();
-  }, SESSION_TIMEOUT_MS);
-}
+    clearTimeout(logoutTimer);
+    logoutTimer = setTimeout(() => {
+      sessionStorage.removeItem("shiftRole");
+      alert("Session expired. Please log in again.");
+      location.reload();
+    }, SESSION_TIMEOUT_MS);
+  }
 
-function bindActivityListeners() {
-  ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(eventName => {
-    window.addEventListener(eventName, () => {
-      resetLogoutTimer();
-    }, { passive: true });
-  });
-}
+  function bindActivityListeners() {
+    ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(eventName => {
+      window.addEventListener(eventName, () => {
+        resetLogoutTimer();
+      }, { passive: true });
+    });
+  }
 
   function checkPin() {
     const value = (pinInput.value || "").trim();
@@ -439,7 +462,6 @@ function bindActivityListeners() {
   pinInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkPin();
   });
-
 
   const weekMonths = {
     14:'April',
@@ -478,10 +500,10 @@ function bindActivityListeners() {
   });
 
   let templateVersions = JSON.parse(JSON.stringify(defaultTemplateVersions));
-let weekNotes = JSON.parse(JSON.stringify(defaultWeekNotes));
-let dayTypes = JSON.parse(JSON.stringify(defaultDayTypes));
-let cellOverrides = {};
-let possibleCovers = "";
+  let weekNotes = JSON.parse(JSON.stringify(defaultWeekNotes));
+  let dayTypes = JSON.parse(JSON.stringify(defaultDayTypes));
+  let cellOverrides = {};
+  let possibleCovers = "";
 
   const rowLabels = ['Days','Nights','Days','Nights'];
 
@@ -517,7 +539,7 @@ let possibleCovers = "";
   const cellTextInput = document.getElementById('cellTextInput');
   const cellColorInput = document.getElementById('cellColorInput');
   const possibleCoversInput = document.getElementById('possibleCoversInput');
-const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
+  const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
 
   applyWeekInput.innerHTML = "";
   Object.keys(weeks).forEach(w => {
@@ -583,16 +605,16 @@ const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
     return getTemplateForWeek(code, week);
   }
 
- function getPlannerState(){
-  return {
-    templateVersions: cloneData(templateVersions),
-    weekNotes: cloneData(weekNotes),
-    dayTypes: cloneData(dayTypes),
-    cellOverrides: cloneData(cellOverrides),
-    possibleCovers: possibleCovers,
-    updatedAt: new Date().toISOString()
-  };
-}
+  function getPlannerState(){
+    return {
+      templateVersions: cloneData(templateVersions),
+      weekNotes: cloneData(weekNotes),
+      dayTypes: cloneData(dayTypes),
+      cellOverrides: cloneData(cellOverrides),
+      possibleCovers: possibleCovers,
+      updatedAt: new Date().toISOString()
+    };
+  }
 
   async function savePlannerState(){
     if (!isAdmin() || isApplyingRemote) return;
@@ -604,24 +626,24 @@ const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
     }
   }
 
- function applyPlannerState(data){
-  isApplyingRemote = true;
+  function applyPlannerState(data){
+    isApplyingRemote = true;
 
-  templateVersions = data?.templateVersions ? cloneData(data.templateVersions) : cloneData(defaultTemplateVersions);
-  weekNotes = data?.weekNotes ? cloneData(data.weekNotes) : cloneData(defaultWeekNotes);
-  dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
-  cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
-  possibleCovers = data?.possibleCovers || "";
+    templateVersions = data?.templateVersions ? cloneData(data.templateVersions) : cloneData(defaultTemplateVersions);
+    weekNotes = data?.weekNotes ? cloneData(data.weekNotes) : cloneData(defaultWeekNotes);
+    dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
+    cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
+    possibleCovers = data?.possibleCovers || "";
 
-  if (possibleCoversInput) {
-    possibleCoversInput.value = possibleCovers;
+    if (possibleCoversInput) {
+      possibleCoversInput.value = possibleCovers;
+    }
+
+    renderSchedule();
+    if (editorView.style.display === "block") renderEditor();
+
+    isApplyingRemote = false;
   }
-
-  renderSchedule();
-  if (editorView.style.display === "block") renderEditor();
-
-  isApplyingRemote = false;
-}
 
   function startRealtimeSync(){
     if (unsubscribePlanner) return;
@@ -640,45 +662,45 @@ const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
     editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
   }
 
- function renderWeekTable(weekNumber, days){
-  const pattern = weekPattern(weekNumber);
-  const showNotes = isAdmin();
+  function renderWeekTable(weekNumber, days){
+    const pattern = weekPattern(weekNumber);
+    const showNotes = isAdmin();
 
-  let html = `<div class="table-card"><div class="grid ${showNotes ? '' : 'grid-no-notes'}">`;
-  html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
+    let html = `<div class="table-card"><div class="${showNotes ? 'grid' : 'grid-no-notes'}">`;
+    html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
 
-  days.forEach((day, dayIndex) => {
-    const type = dayTypes[weekNumber][dayIndex];
-    const defrost = type !== 'normal';
-    const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
-    html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
-  });
+    days.forEach((day, dayIndex) => {
+      const type = dayTypes[weekNumber][dayIndex];
+      const defrost = type !== 'normal';
+      const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
+      html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
+    });
 
-  if (showNotes) {
-    html += `<div class="cell notes-head" data-notes-week="${weekNumber}">Week Notes</div>`;
-  }
+    if (showNotes) {
+      html += `<div class="cell notes-head" data-notes-week="${weekNumber}">Week Notes</div>`;
+    }
 
-  pattern.forEach((row, rowIndex) => {
-    html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
+    pattern.forEach((row, rowIndex) => {
+      html += `<div class="cell side-cell">${rowLabels[rowIndex]}</div>`;
 
-    row.forEach((code, colIndex) => {
-      if(!code){
-        html += `<div class="cell empty"></div>`;
-      } else {
-        const shift = getCellData(weekNumber, rowIndex, colIndex, code);
-        html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div></div>`;
+      row.forEach((code, colIndex) => {
+        if(!code){
+          html += `<div class="cell empty"></div>`;
+        } else {
+          const shift = getCellData(weekNumber, rowIndex, colIndex, code);
+          html += `<div class="cell"><div class="shift ${shift.color}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div></div>`;
+        }
+      });
+
+      if (showNotes && rowIndex === 0) {
+        const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
+        html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\n/g,'<br>')}</div></div>`;
       }
     });
 
-    if (showNotes && rowIndex === 0) {
-      const notesContent = weekNotes[weekNumber] || 'Click to add weekly notes';
-      html += `<div class="cell notes-cell" data-notes-week="${weekNumber}"><div class="notes-box">${notesContent.replace(/\n/g,'<br>')}</div></div>`;
-    }
-  });
-
-  html += `</div></div>`;
-  return html;
-}
+    html += `</div></div>`;
+    return html;
+  }
 
   function bindClicks(){
     document.querySelectorAll('.shift[data-week]').forEach(el => {
@@ -721,47 +743,43 @@ const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
     bindClicks();
   }
 
-function renderEditor(){
-  cards.innerHTML = '';
+  function renderEditor(){
+    cards.innerHTML = '';
 
-  Object.keys(templateVersions).forEach(key => {
-    const shift = getTemplateForWeek(key, 14);
+    Object.keys(templateVersions).forEach(key => {
+      const shift = getTemplateForWeek(key, 14);
 
-    const el = document.createElement('div');
-    el.className = 'card';
+      const el = document.createElement('div');
+      el.className = 'card';
 
-    el.innerHTML = `
-      <div class="day">${shift.title}</div>
-      <div class="shift ${shift.color}" style="margin-bottom:12px">
-        <div class="shift-title">${shift.title}</div>
-        <div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div>
-      </div>
-      <div class="small">Click to edit this template.</div>
-    `;
+      el.innerHTML = `
+        <div class="day">${shift.title}</div>
+        <div class="shift ${shift.color}" style="margin-bottom:12px">
+          <div class="shift-title">${shift.title}</div>
+          <div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div>
+        </div>
+        <div class="small">Click to edit this template.</div>
+      `;
 
-    el.onclick = () => {
-      if (!isAdmin()) return;
+      el.onclick = () => {
+        if (!isAdmin()) return;
 
-      activeShift = key;
-      titleInput.value = shift.title;
-      textInput.value = shift.text;
-      colorInput.value = shift.color;
+        activeShift = key;
+        titleInput.value = shift.title;
+        textInput.value = shift.text;
+        colorInput.value = shift.color;
 
-      modal.style.display = 'flex';
-    };
+        modal.style.display = 'flex';
+      };
 
-    cards.appendChild(el);
-  });
+      cards.appendChild(el);
+    });
 
-  // POPUNI Possible Covers polje
-  possibleCoversInput.value = possibleCovers || "";
+    possibleCoversInput.value = possibleCovers || "";
+    possibleCoversInput.readOnly = !isAdmin();
+    savePossibleCoversBtn.style.display = isAdmin() ? "inline-block" : "none";
+  }
 
-  // Admin smije uređivati, engineer ne
-  possibleCoversInput.readOnly = !isAdmin();
-
-  // Save gumb samo za admin
-  savePossibleCoversBtn.style.display = isAdmin() ? "inline-block" : "none";
-}
   editTemplatesBtn.onclick = () => {
     if (!isAdmin()) return;
     scheduleView.style.display='none';
@@ -774,18 +792,17 @@ function renderEditor(){
     scheduleView.style.display='block';
     renderSchedule();
   };
-  
+
   savePossibleCoversBtn.onclick = async () => {
-  if (!isAdmin()) return;
+    if (!isAdmin()) return;
 
-  possibleCovers = possibleCoversInput.value || "";
-
-  await savePlannerState();
-
-  alert("Possible Covers saved");
-};
+    possibleCovers = possibleCoversInput.value || "";
+    await savePlannerState();
+    alert("Possible Covers saved");
+  };
 
   cancelBtn.onclick = () => { modal.style.display='none'; };
+
   saveBtn.onclick = () => {
     pendingTemplateData = { title:titleInput.value, text:textInput.value, color:colorInput.value };
     modal.style.display='none';
@@ -799,7 +816,7 @@ function renderEditor(){
 
   confirmApplyBtn.onclick = async () => {
     const startWeek = +applyWeekInput.value;
-    templateVersions[activeShift].push({ startWeek, data: cloneData(pendingTemplateData) });
+    templateVersions[activeShift].push({ startWeek, data: JSON.parse(JSON.stringify(pendingTemplateData)) });
     templateVersions[activeShift].sort((a,b) => a.startWeek - b.startWeek);
     pendingTemplateData = null;
     applyModal.style.display='none';
@@ -809,6 +826,7 @@ function renderEditor(){
   };
 
   cancelDayBtn.onclick = () => { dayModal.style.display='none'; };
+
   saveDayBtn.onclick = async () => {
     const selected = document.querySelector('input[name="dayType"]:checked');
     if(selected && activeDayWeek !== null){
@@ -820,6 +838,7 @@ function renderEditor(){
   };
 
   cancelNotesBtn.onclick = () => { notesModal.style.display='none'; };
+
   saveNotesBtn.onclick = async () => {
     if(activeNotesWeek !== null){
       weekNotes[activeNotesWeek] = notesInput.value;
@@ -830,6 +849,7 @@ function renderEditor(){
   };
 
   cancelCellBtn.onclick = () => { cellModal.style.display='none'; };
+
   saveCellBtn.onclick = async () => {
     if(activeCellKey){
       cellOverrides[activeCellKey] = {
@@ -846,9 +866,10 @@ function renderEditor(){
   renderSchedule();
   updatePermissions();
   bindActivityListeners();
+
   if (sessionStorage.getItem("shiftRole")) {
-  unlock(sessionStorage.getItem("shiftRole"));
-}
+    unlock(sessionStorage.getItem("shiftRole"));
+  }
 </script>
 </body>
 </html>
