@@ -1275,7 +1275,7 @@ function drawCategory(b,m,catKey){
     </script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCenPiFOZwK-MvaU4gXF5WUTmo6FKCrvvU",
@@ -1307,6 +1307,20 @@ function drawCategory(b,m,catKey){
   }
 
   testWrite();
+
+  window.saveShift = async function(letter, engineers, fromWeek){
+    try {
+      await setDoc(doc(db, "shiftPlanner", letter), {
+        engineers,
+        fromWeek
+      });
+
+      console.log("Saved", letter, engineers, fromWeek);
+      alert(`Shift ${letter} saved from week ${fromWeek}`);
+    } catch(err){
+      console.error("Save failed", err);
+    }
+  };
 </script>
 </body>
 </html>
