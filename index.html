@@ -1272,19 +1272,19 @@ function drawCategory(b,m,catKey){
   if(sessionStorage.getItem('unlocked') === '1'){
     doUnlock(sessionStorage.getItem('role')||'operator');
   }
-    </script>
+</script>
 <script type="module">
-  import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCenPiFOZwK-MvaU4gXF5WUTmo6FKCrvvU",
-  authDomain: "shift-plan-1937f.firebaseapp.com",
-  projectId: "shift-plan-1937f",
-  storageBucket: "shift-plan-1937f.firebasestorage.app",
-  messagingSenderId: "216804667695",
-  appId: "1:216804667695:web:3903add223aa8a61dfb1da",
-  measurementId: "G-13H1P0K1XD"
+    authDomain: "shift-plan-1937f.firebaseapp.com",
+    projectId: "shift-plan-1937f",
+    storageBucket: "shift-plan-1937f.firebasestorage.app",
+    messagingSenderId: "216804667695",
+    appId: "1:216804667695:web:3903add223aa8a61dfb1da",
+    measurementId: "G-13H1P0K1XD"
   };
 
   const app = initializeApp(firebaseConfig);
