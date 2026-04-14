@@ -893,10 +893,11 @@ label.radio{display:block;margin:8px 0}
   const diff = Math.floor((now - start) / 86400000);
   return Math.ceil((diff + start.getUTCDay() + 1) / 7);
 }
+function renderSchedule(keepScrollPosition = false){
+  const oldScrollY = window.scrollY;
+  const oldHeight = document.documentElement.scrollHeight;
 
- function renderSchedule(){
   const currentWeek = getCurrentWeekNumber();
-
   let visibleWeeks = Object.entries(weeks);
 
   if (!showPastWeeks) {
@@ -911,8 +912,15 @@ label.radio{display:block;margin:8px 0}
   }
 
   bindClicks();
-}
 
+  if (keepScrollPosition) {
+    requestAnimationFrame(() => {
+      const newHeight = document.documentElement.scrollHeight;
+      const heightDiff = newHeight - oldHeight;
+      window.scrollTo(0, oldScrollY + Math.max(0, heightDiff));
+    });
+  }
+}
   function renderEditor(){
     cards.innerHTML = '';
 
@@ -1043,7 +1051,7 @@ label.radio{display:block;margin:8px 0}
   
   togglePastWeeksBtn.onclick = () => {
   showPastWeeks = !showPastWeeks;
-  renderSchedule();
+  renderSchedule(true);
 };
 
   renderSchedule();
