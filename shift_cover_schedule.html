@@ -1046,12 +1046,12 @@ function getTemplateMembersFromData(code, data) {
   }
   return extractInitialsFromText(data.text || "");
 }
-  function getCellBaseMembers(code, data) {
+  function getCellBaseMembers(code, data, week) {
   if (Array.isArray(data.members)) {
     return [...data.members];
   }
 
-  const template = getTemplateForWeek(code, 14);
+  const template = getTemplateForWeek(code, week);
 
   if (Array.isArray(template.members)) {
     return [...template.members];
@@ -1424,6 +1424,7 @@ function bindClicks(){
 
       activeCellKey = `${el.dataset.week}-${el.dataset.row}-${el.dataset.col}`;
       activeCellCode = el.dataset.code;
+      const weekNumber = +el.dataset.week;
 
       const current = getCellData(
         +el.dataset.week,
@@ -1434,7 +1435,7 @@ function bindClicks(){
 
       cellTitleInput.value = current.title;
 
-const baseMembers = getCellBaseMembers(activeCellCode, current);
+const baseMembers = getCellBaseMembers(activeCellCode, current, weekNumber);
 cellTextInput.value = buildTextFromMembers(baseMembers);
 
 activeCellExtraMembers = getCellExtraMembers(current);
