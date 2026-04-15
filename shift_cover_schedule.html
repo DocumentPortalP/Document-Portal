@@ -446,11 +446,12 @@ label.radio{display:block;margin:8px 0}
       </div>
 
       <div class="header-actions">
-        <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
-          Home
-        </a>
-        <button id="editTemplatesBtn">Edit Shift Templates</button>
-      </div>
+  <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
+    Home
+  </a>
+  <button id="overtimeBtn" class="secondary">Overtime Summary</button>
+  <button id="editTemplatesBtn">Edit Shift Templates</button>
+</div>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
   <button id="togglePastWeeksBtn" class="secondary" style="display:none;">Show Previous Weeks</button>
@@ -581,7 +582,19 @@ label.radio{display:block;margin:8px 0}
     </div>
   </div>
 </div>
+<div id="overtimeModal">
+  <div class="modal-box" style="width:720px;max-width:100%;">
+    <h3>Monthly Overtime Summary</h3>
 
+    <select id="overtimeMonthSelect"></select>
+
+    <div id="overtimeSummaryWrap" style="margin-top:12px;"></div>
+
+    <div class="actions" style="margin-top:16px;">
+      <button id="closeOvertimeBtn" class="secondary">Close</button>
+    </div>
+  </div>
+</div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -836,6 +849,11 @@ const extraEngineersList = document.getElementById('extraEngineersList');
   const liveDateTime = document.getElementById('liveDateTime');
   const togglePastWeeksBtn = document.getElementById('togglePastWeeksBtn');
   const cellExtraEngineersList = document.getElementById('cellExtraEngineersList');
+  const overtimeBtn = document.getElementById('overtimeBtn');
+const overtimeModal = document.getElementById('overtimeModal');
+const overtimeMonthSelect = document.getElementById('overtimeMonthSelect');
+const overtimeSummaryWrap = document.getElementById('overtimeSummaryWrap');
+const closeOvertimeBtn = document.getElementById('closeOvertimeBtn');
 
   applyWeekInput.innerHTML = "";
   Object.keys(weeks).forEach(w => {
@@ -1327,6 +1345,132 @@ function bindClicks(){
   const diff = Math.floor((now - start) / 86400000);
   return Math.ceil((diff + start.getUTCDay() + 1) / 7);
 }
+  const PLANNER_YEAR = 2026;
+
+function getDateForISOWeekDay(year, week, dayIndex) {
+  const simple = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = simple.getUTCDay() || 7;
+  const mondayWeek1 = new Date(simple);
+  mondayWeek1.setUTCDate(simple.getUTCDate() - dayOfWeek + 1);
+
+  const result = new Date(mondayWeek1);
+  result.setUTCDate(mondayWeek1.getUTCDate() + (week - 1) * 7 + dayIndex);
+  return result;
+}
+
+function getMonthKeyFromWeekDay(weekNumber, dayIndex) {
+  const date = getDateForISOWeekDay(PLANNER_YEAR, weekNumber, dayIndex);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+function getMonthLabel(monthKey) {
+  const [year, month] = monthKey.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, 1));
+
+  return date.toLocaleDateString('en-IE', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+}
+
+function getAvailableMonthKeys() {
+  const monthSet = new Set();
+
+  Object.keys(weeks).forEach(week => {
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      monthSet.add(getMonthKeyFromWeekDay(+week, dayIndex));
+    }
+  });
+
+  return [...monthSet].sort();
+}
+
+function calculateMonthlyOvertime(monthKey) {
+  const totals = {};
+
+  Object.keys(weeks).forEach(weekNumber => {
+    const week = +weekNumber;
+    const pattern = weekPattern(week);
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const thisMonthKey = getMonthKeyFromWeekDay(week, dayIndex);
+      if (thisMonthKey !== monthKey) continue;
+
+      pattern.forEach((row, rowIndex) => {
+        const code = row[dayIndex];
+        if (!code) return;
+
+        const shift = getCellData(week, rowIndex, dayIndex, code);
+        const extras = getCellExtraMembers(shift);
+
+        extras.forEach(initials => {
+          if (!totals[initials]) {
+            totals[initials] = {
+              initials,
+              name: getEngineerByInitialsGlobal(initials)?.name || initials,
+              shifts: 0,
+              hours: 0
+            };
+          }
+
+          totals[initials].shifts += 1;
+          totals[initials].hours += 12;
+        });
+      });
+    }
+  });
+
+  return Object.values(totals)
+    .filter(person => person.shifts > 0)
+    .sort((a, b) => b.hours - a.hours || a.name.localeCompare(b.name));
+}
+
+function renderOvertimeSummary(monthKey) {
+  const rows = calculateMonthlyOvertime(monthKey);
+
+  if (!rows.length) {
+    overtimeSummaryWrap.innerHTML = `
+      <div class="overtime-empty">
+        No overtime / extra shifts recorded for ${getMonthLabel(monthKey)}.
+      </div>
+    `;
+    return;
+  }
+
+  overtimeSummaryWrap.innerHTML = `
+    <table class="overtime-table">
+      <thead>
+        <tr>
+          <th>Engineer</th>
+          <th>Initials</th>
+          <th>Extra Shifts</th>
+          <th>Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(person => `
+          <tr>
+            <td>${person.name}</td>
+            <td>${person.initials}</td>
+            <td>${person.shifts}</td>
+            <td><strong>${person.hours}h</strong></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function populateOvertimeMonths() {
+  const monthKeys = getAvailableMonthKeys();
+
+  overtimeMonthSelect.innerHTML = monthKeys.map(key => `
+    <option value="${key}">${getMonthLabel(key)}</option>
+  `).join('');
+}
 function renderSchedule(keepScrollPosition = false){
   const oldScrollY = window.scrollY;
   const oldHeight = document.documentElement.scrollHeight;
@@ -1540,7 +1684,28 @@ saveCellBtn.onclick = async () => {
   showPastWeeks = !showPastWeeks;
   renderSchedule(true);
 };
+overtimeBtn.onclick = () => {
+  populateOvertimeMonths();
 
+  if (overtimeMonthSelect.value) {
+    renderOvertimeSummary(overtimeMonthSelect.value);
+  }
+
+  overtimeModal.style.display = 'flex';
+};
+
+overtimeMonthSelect.onchange = () => {
+  renderOvertimeSummary(overtimeMonthSelect.value);
+};
+
+closeOvertimeBtn.onclick = () => {
+  overtimeModal.style.display = 'none';
+};
+  overtimeModal.onclick = (e) => {
+  if (e.target === overtimeModal) {
+    overtimeModal.style.display = 'none';
+  }
+};
   renderSchedule();
   updatePermissions();
   bindActivityListeners();
@@ -1574,6 +1739,51 @@ saveCellBtn.onclick = async () => {
       await savePlannerState();
     };
   });
+}
+  #overtimeModal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:20;
+}
+
+.overtime-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:#fff;
+  border:1px solid #dbe2ea;
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.overtime-table th,
+.overtime-table td{
+  padding:10px 12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+  font-size:14px;
+}
+
+.overtime-table th{
+  background:#e2e8f0;
+  font-weight:800;
+}
+
+.overtime-table tr:last-child td{
+  border-bottom:none;
+}
+
+.overtime-empty{
+  padding:14px;
+  border:1px dashed #cbd5e1;
+  border-radius:12px;
+  background:#f8fafc;
+  color:#64748b;
 }
 </script>
 </body>
