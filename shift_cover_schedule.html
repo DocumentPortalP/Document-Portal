@@ -473,13 +473,18 @@ label.radio{display:block;margin:8px 0}
       </div>
 
       <div class="card" style="cursor:default">
-        <div class="day">Possible Covers</div>
-        <div class="small" style="margin-bottom:10px"></div>
-        <textarea id="possibleCoversInput" rows="14" placeholder=""></textarea>
-        <div class="actions">
-          <button id="savePossibleCoversBtn">Save</button>
-        </div>
-      </div>
+  <div class="day">Extra Engineers / Covers</div>
+  <div class="small" style="margin-bottom:10px">Create additional engineers that can be assigned as extra cover in any shift.</div>
+
+  <input id="newEngineerNameInput" placeholder="Full name">
+  <input id="newEngineerInitialsInput" placeholder="Initials">
+
+  <div class="actions" style="margin-bottom:12px;">
+    <button id="addNewEngineerBtn">Add Engineer</button>
+  </div>
+
+  <div id="extraEngineersList" class="selected-engineers-list"></div>
+</div>
     </div>
   </div>
 
@@ -555,12 +560,15 @@ label.radio{display:block;margin:8px 0}
 
     <input id="cellTitleInput" placeholder="Shift title">
 
-    <div class="small" style="margin-bottom:8px;">Assigned engineers</div>
+    <div class="small" style="margin-bottom:8px;">Base shift engineers</div>
     <div id="cellSelectedEngineersList" class="selected-engineers-list"></div>
+
+    <div class="small" style="margin:12px 0 8px;">Extra shift engineers</div>
+    <div id="cellExtraEngineersList" class="selected-engineers-list"></div>
 
     <div class="engineer-picker-row">
       <select id="cellAddEngineerSelect"></select>
-      <button type="button" id="cellAddEngineerBtn">Add</button>
+      <button type="button" id="cellAddEngineerBtn">Add Extra Shift</button>
     </div>
 
     <button type="button" id="cellRedToggleBtn" class="secondary" style="width:100%;margin-bottom:12px;">
@@ -572,6 +580,7 @@ label.radio{display:block;margin:8px 0}
       <button id="saveCellBtn">Save</button>
     </div>
   </div>
+</div>
 </div>
 
 <script type="module">
@@ -739,6 +748,10 @@ label.radio{display:block;margin:8px 0}
     { initials: "MI", name: "Martynas Ilgunaitis" }
   ]
 };
+  let extraEngineers = [
+  // primjer:
+  { initials: "MH", name: "Mervyn Howard" }
+];
   const engineerNames = {
   JM: "John Malone",
   CQ: "Conor Quinn",
@@ -817,10 +830,13 @@ const cellSelectedEngineersList = document.getElementById('cellSelectedEngineers
 const cellAddEngineerSelect = document.getElementById('cellAddEngineerSelect');
 const cellAddEngineerBtn = document.getElementById('cellAddEngineerBtn');
 const cellRedToggleBtn = document.getElementById('cellRedToggleBtn');
-  const possibleCoversInput = document.getElementById('possibleCoversInput');
-  const savePossibleCoversBtn = document.getElementById('savePossibleCoversBtn');
+const newEngineerNameInput = document.getElementById('newEngineerNameInput');
+const newEngineerInitialsInput = document.getElementById('newEngineerInitialsInput');
+const addNewEngineerBtn = document.getElementById('addNewEngineerBtn');
+const extraEngineersList = document.getElementById('extraEngineersList');
   const liveDateTime = document.getElementById('liveDateTime');
   const togglePastWeeksBtn = document.getElementById('togglePastWeeksBtn');
+  const cellExtraEngineersList = document.getElementById('cellExtraEngineersList');
 
   applyWeekInput.innerHTML = "";
   Object.keys(weeks).forEach(w => {
@@ -842,6 +858,7 @@ let activeCellIsRed = false;
 let activeCellMembers = [];
 let isApplyingRemote = false;
 let unsubscribePlanner = null;
+  let activeCellExtraMembers = [];
 
   function weekPattern(week){
     const phase = (week - 14) % 4;
@@ -917,6 +934,19 @@ function getTemplateMembersFromData(code, data) {
   }
   return extractInitialsFromText(data.text || "");
 }
+  function getCellBaseMembers(code, data) {
+  if (Array.isArray(data.members) && data.members.length) {
+    return [...data.members];
+  }
+  return extractInitialsFromText(data.text || "");
+}
+
+function getCellExtraMembers(data) {
+  if (Array.isArray(data.extraMembers) && data.extraMembers.length) {
+    return [...data.extraMembers];
+  }
+  return [];
+}
 
 function buildTextFromMembers(members) {
   const lines = [];
@@ -943,10 +973,10 @@ function renderCellSelectedEngineers() {
   if (!cellSelectedEngineersList) return;
 
   if (!activeCellMembers.length) {
-    cellSelectedEngineersList.innerHTML = `<div class="empty-engineer-note">No engineers added yet.</div>`;
+    cellSelectedEngineersList.innerHTML = `<div class="empty-engineer-note">No base engineers in this cell.</div>`;
   } else {
     cellSelectedEngineersList.innerHTML = activeCellMembers.map(initials => {
-      const person = getEngineerByInitials(activeCellCode, initials);
+      const person = getEngineerByInitials(activeCellCode, initials) || getEngineerByInitialsGlobal(initials);
       const name = person ? person.name : initials;
 
       return `
@@ -966,16 +996,45 @@ function renderCellSelectedEngineers() {
       const initials = btn.dataset.removeCellEngineer;
       activeCellMembers = activeCellMembers.filter(x => x !== initials);
       renderCellSelectedEngineers();
-      renderCellAddEngineerOptions();
     };
   });
 }
+  function renderCellExtraEngineers() {
+  if (!cellExtraEngineersList) return;
+
+  if (!activeCellExtraMembers.length) {
+    cellExtraEngineersList.innerHTML = `<div class="empty-engineer-note">No extra shift engineers added.</div>`;
+  } else {
+    cellExtraEngineersList.innerHTML = activeCellExtraMembers.map(initials => {
+      const person = getEngineerByInitialsGlobal(initials);
+      const name = person ? person.name : initials;
+
+      return `
+        <div class="engineer-row">
+          <div class="engineer-row-left">
+            <div class="engineer-name">${name}</div>
+            <div class="engineer-initials">${initials}</div>
+          </div>
+          <button type="button" class="remove-engineer-btn" data-remove-cell-extra-engineer="${initials}">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  cellExtraEngineersList.querySelectorAll('[data-remove-cell-extra-engineer]').forEach(btn => {
+    btn.onclick = () => {
+      const initials = btn.dataset.removeCellExtraEngineer;
+      activeCellExtraMembers = activeCellExtraMembers.filter(x => x !== initials);
+      renderCellExtraEngineers();
+      renderCellAddEngineerOptions();
+    };
+  })
 
 function renderCellAddEngineerOptions() {
   if (!cellAddEngineerSelect) return;
 
-  const available = (shiftEngineers[activeCellCode] || []).filter(
-    person => !activeCellMembers.includes(person.initials)
+  const available = getAllEngineers().filter(
+    person => !activeCellMembers.includes(person.initials) && !activeCellExtraMembers.includes(person.initials)
   );
 
   if (!available.length) {
@@ -1027,6 +1086,7 @@ function renderCellAddEngineerOptions() {
       dayTypes: cloneData(dayTypes),
       cellOverrides: cloneData(cellOverrides),
       possibleCovers: possibleCovers,
+      extraEngineers: cloneData(extraEngineers),
       updatedAt: new Date().toISOString()
     };
   }
@@ -1049,6 +1109,7 @@ function renderCellAddEngineerOptions() {
     dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
     cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
     possibleCovers = data?.possibleCovers || "";
+    extraEngineers = data?.extraEngineers ? cloneData(data.extraEngineers) : [];
 
     if (possibleCoversInput) {
       possibleCoversInput.value = possibleCovers;
@@ -1118,48 +1179,64 @@ function renderCellAddEngineerOptions() {
     return html;
   }
 
-  function bindClicks(){
-    document.querySelectorAll('.shift[data-week]').forEach(el => {
-      el.onclick = () => {
-        if (!isAdmin()) return;
-        activeCellKey = `${el.dataset.week}-${el.dataset.row}-${el.dataset.col}`;
-activeCellCode = el.dataset.code;
-const current = getCellData(+el.dataset.week, +el.dataset.row, +el.dataset.col, el.dataset.code);
+function bindClicks(){
+  document.querySelectorAll('.shift[data-week]').forEach(el => {
+    el.onclick = () => {
+      if (!isAdmin()) return;
 
-cellTitleInput.value = current.title;
-activeCellMembers = getTemplateMembersFromData(activeCellCode, current);
-activeCellIsRed = !!current.isRed;
+      activeCellKey = `${el.dataset.week}-${el.dataset.row}-${el.dataset.col}`;
+      activeCellCode = el.dataset.code;
 
-renderCellSelectedEngineers();
-renderCellAddEngineerOptions();
-updateCellRedButton();
+      const current = getCellData(
+        +el.dataset.week,
+        +el.dataset.row,
+        +el.dataset.col,
+        el.dataset.code
+      );
 
-cellModal.style.display = 'flex';
-      };
-    });
+      cellTitleInput.value = current.title;
+      activeCellMembers = getCellBaseMembers(activeCellCode, current);
+      activeCellExtraMembers = getCellExtraMembers(current);
+      activeCellIsRed = !!current.isRed;
 
-    document.querySelectorAll('[data-day-week]').forEach(el => {
-      el.onclick = () => {
-        if (!isAdmin()) return;
-        activeDayWeek = +el.dataset.dayWeek;
-        activeDayIndex = +el.dataset.dayIndex;
-        dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
-        const current = dayTypes[activeDayWeek][activeDayIndex];
-        document.querySelectorAll('input[name="dayType"]').forEach(r => r.checked = (r.value === current));
-        dayModal.style.display = 'flex';
-      };
-    });
+      renderCellSelectedEngineers();
+      renderCellExtraEngineers();
+      renderCellAddEngineerOptions();
+      updateCellRedButton();
 
-    document.querySelectorAll('[data-notes-week]').forEach(el => {
-      el.onclick = () => {
-        if (!isAdmin()) return;
-        activeNotesWeek = +el.dataset.notesWeek;
-        notesModalLabel.textContent = `Week ${activeNotesWeek}`;
-        notesInput.value = weekNotes[activeNotesWeek] || '';
-        notesModal.style.display = 'flex';
-      };
-    });
-  }
+      cellModal.style.display = 'flex';
+    };
+  });
+
+  document.querySelectorAll('[data-day-week]').forEach(el => {
+    el.onclick = () => {
+      if (!isAdmin()) return;
+
+      activeDayWeek = +el.dataset.dayWeek;
+      activeDayIndex = +el.dataset.dayIndex;
+      dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
+
+      const current = dayTypes[activeDayWeek][activeDayIndex];
+      document.querySelectorAll('input[name="dayType"]').forEach(r => {
+        r.checked = (r.value === current);
+      });
+
+      dayModal.style.display = 'flex';
+    };
+  });
+
+  document.querySelectorAll('[data-notes-week]').forEach(el => {
+    el.onclick = () => {
+      if (!isAdmin()) return;
+
+      activeNotesWeek = +el.dataset.notesWeek;
+      notesModalLabel.textContent = `Week ${activeNotesWeek}`;
+      notesInput.value = weekNotes[activeNotesWeek] || '';
+
+      notesModal.style.display = 'flex';
+    };
+  });
+}
   function getCurrentWeekNumber() {
   const now = new Date();
   const start = new Date(Date.UTC(now.getFullYear(), 0, 1));
@@ -1194,6 +1271,14 @@ function renderSchedule(keepScrollPosition = false){
     });
   }
 }
+  function getAllEngineers() {
+  const base = Object.values(shiftEngineers).flat();
+  return [...base, ...extraEngineers];
+}
+
+function getEngineerByInitialsGlobal(initials) {
+  return getAllEngineers().find(e => e.initials === initials) || null;
+}
   function renderEditor(){
     cards.innerHTML = '';
 
@@ -1220,9 +1305,10 @@ el.onclick = () => {
       cards.appendChild(el);
     });
 
-    possibleCoversInput.value = possibleCovers || "";
-    possibleCoversInput.readOnly = !isAdmin();
-    savePossibleCoversBtn.style.display = isAdmin() ? "inline-block" : "none";
+newEngineerNameInput.disabled = !isAdmin();
+newEngineerInitialsInput.disabled = !isAdmin();
+addNewEngineerBtn.style.display = isAdmin() ? "inline-block" : "none";
+renderExtraEngineersList();
   }
 
   editTemplatesBtn.onclick = () => {
@@ -1231,6 +1317,29 @@ el.onclick = () => {
     editorView.style.display='block';
     renderEditor();
   };
+  addNewEngineerBtn.onclick = async () => {
+  const name = (newEngineerNameInput.value || "").trim();
+  const initials = (newEngineerInitialsInput.value || "").trim();
+
+  if (!name || !initials) return;
+
+  const exists = getAllEngineers().some(
+    e => e.initials.toUpperCase() === initials.toUpperCase()
+  );
+
+  if (exists) {
+    alert("These initials already exist.");
+    return;
+  }
+
+  extraEngineers.push({ name, initials });
+
+  newEngineerNameInput.value = "";
+  newEngineerInitialsInput.value = "";
+
+  renderExtraEngineersList();
+  await savePlannerState();
+};
 
   backBtn.onclick = () => {
     editorView.style.display='none';
@@ -1238,13 +1347,6 @@ el.onclick = () => {
     renderSchedule();
   };
 
-  savePossibleCoversBtn.onclick = async () => {
-    if (!isAdmin()) return;
-    possibleCovers = possibleCoversInput.value || "";
-    await savePlannerState();
-    alert("Possible Covers saved");
-  };
-  
 
   cancelBtn.onclick = () => { modal.style.display='none'; };
   addEngineerBtn.onclick = () => {
@@ -1321,7 +1423,18 @@ el.onclick = () => {
     renderSchedule();
     await savePlannerState();
   };
+cellAddEngineerBtn.onclick = () => {
+  const initials = cellAddEngineerSelect.value;
 
+  if (!initials) return;
+  if (activeCellMembers.includes(initials)) return;
+  if (activeCellExtraMembers.includes(initials)) return;
+
+  activeCellExtraMembers.push(initials);
+
+  renderCellExtraEngineers();
+  renderCellAddEngineerOptions();
+};
   cellRedToggleBtn.onclick = () => {
     activeCellIsRed = !activeCellIsRed;
     updateCellRedButton();
@@ -1333,11 +1446,13 @@ saveCellBtn.onclick = async () => {
   if(activeCellKey && activeCellCode){
     const week = +activeCellKey.split('-')[0];
     const base = getTemplateForWeek(activeCellCode, week);
+    const combinedMembers = [...activeCellMembers, ...activeCellExtraMembers];
 
     cellOverrides[activeCellKey] = {
       title: cellTitleInput.value,
-      text: buildTextFromMembers(activeCellMembers),
+      text: buildTextFromMembers(combinedMembers),
       members: [...activeCellMembers],
+      extraMembers: [...activeCellExtraMembers],
       color: base.color,
       isRed: activeCellIsRed
     };
@@ -1359,6 +1474,33 @@ saveCellBtn.onclick = async () => {
   if (sessionStorage.getItem("shiftRole")) {
     unlock(sessionStorage.getItem("shiftRole"));
   }
+  function renderExtraEngineersList() {
+  if (!extraEngineersList) return;
+
+  if (!extraEngineers.length) {
+    extraEngineersList.innerHTML = `<div class="empty-engineer-note">No extra engineers added yet.</div>`;
+    return;
+  }
+
+  extraEngineersList.innerHTML = extraEngineers.map(person => `
+    <div class="engineer-row">
+      <div class="engineer-row-left">
+        <div class="engineer-name">${person.name}</div>
+        <div class="engineer-initials">${person.initials}</div>
+      </div>
+      <button type="button" class="remove-engineer-btn" data-remove-extra-engineer="${person.initials}">✕</button>
+    </div>
+  `).join('');
+
+  extraEngineersList.querySelectorAll('[data-remove-extra-engineer]').forEach(btn => {
+    btn.onclick = async () => {
+      const initials = btn.dataset.removeExtraEngineer;
+      extraEngineers = extraEngineers.filter(e => e.initials !== initials);
+      renderExtraEngineersList();
+      await savePlannerState();
+    };
+  });
+}
 </script>
 </body>
 </html>
