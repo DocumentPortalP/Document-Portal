@@ -345,6 +345,10 @@ label.radio{display:block;margin:8px 0}
     padding:7px 10px;
   }
 }
+  #editorView .shift-text{
+  font-size:13px;
+  line-height:1.35;
+}
 </style>
 </head>
 <body>
@@ -614,6 +618,25 @@ label.radio{display:block;margin:8px 0}
     20: ['Mon 11','Tue 12','Wed 13','Thu 14','Fri 15','Sat 16','Sun 17'],
     21: ['Mon 18','Tue 19','Wed 20','Thu 21','Fri 22','Sat 23','Sun 24']
   };
+  const engineerNames = {
+  JM: "John Malone",
+  CQ: "Conor Quinn",
+  FD: "Frankie Duffy",
+  AJ: "Alan Jennings",
+
+  AL: "Al Richardson",
+  ML: "Martin Lanigan",
+  JN: "John Nolan",
+
+  AM: "Andrew Miles",
+  BW: "Brian Warnock",
+  SMcT: "Seamus McTigue",
+
+  PM: "Padraig Mulligan",
+  ED: "Eanna Diffley",
+  BS: "Brian Smith",
+  MI: "Martynas Ilgunaitis"
+};
 
   const defaultTemplateVersions = {
     A:[{startWeek:14,data:{title:'Shift A',text:'JM / CQ\\nFD (AJ)',color:'shift-a',isRed:false}}],
@@ -724,6 +747,32 @@ label.radio{display:block;margin:8px 0}
   function cloneData(obj){
     return JSON.parse(JSON.stringify(obj));
   }
+  function formatShiftPeople(text){
+  if (!text) return "";
+
+  return text
+    .split('\n')
+    .map(line => {
+      return line
+        .split('/')
+        .map(part => part.trim())
+        .filter(Boolean)
+        .map(token => {
+          const clean = token.replace(/[()]/g, '').trim();
+          const fullName = engineerNames[clean];
+
+          if (!fullName) return token;
+
+          if (token.includes('(') && token.includes(')')) {
+            return `${fullName} (${clean})`;
+          }
+
+          return `${fullName} (${clean})`;
+        })
+        .join('<br>');
+    })
+    .join('<br><br>');
+}
 
   function updateCellRedButton(){
     if (!cellRedToggleBtn) return;
@@ -931,13 +980,13 @@ function renderSchedule(keepScrollPosition = false){
       el.className = 'card';
 
       el.innerHTML = `
-        <div class="day">${shift.title}</div>
-        <div class="shift ${shift.color}" style="margin-bottom:12px">
-          <div class="shift-title">${shift.title}</div>
-          <div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div>
-        </div>
-        <div class="small">Click to edit this template.</div>
-      `;
+  <div class="day">${shift.title}</div>
+  <div class="shift ${shift.color}" style="margin-bottom:12px">
+    <div class="shift-title">${shift.title}</div>
+    <div class="shift-text">${formatShiftPeople(shift.text)}</div>
+  </div>
+  <div class="small">Click to edit this template.</div>
+`;
 
       el.onclick = () => {
         if (!isAdmin()) return;
