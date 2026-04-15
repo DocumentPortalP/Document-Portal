@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Shift Planner</title>
 <style>
-  day-type-buttons{
+  .day-type-buttons{
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -1798,10 +1798,7 @@ cellAddEngineerBtn.onclick = () => {
   cancelCellBtn.onclick = () => { cellModal.style.display='none'; };
 
 
-  if(activeCellKey && activeCellCode){
-    const week = +activeCellKey.split('-')[0];
-    const base = getTemplateForWeek(activeCellCode, week);
-saveCellBtn.onclick = async () => {
+  saveCellBtn.onclick = async () => {
   if (activeCellKey && activeCellCode) {
     const week = +activeCellKey.split('-')[0];
     const base = getTemplateForWeek(activeCellCode, week);
@@ -1824,12 +1821,6 @@ saveCellBtn.onclick = async () => {
   renderSchedule();
   await savePlannerState();
 };
-  }
-  cellModal.style.display='none';
-  renderSchedule();
-  await savePlannerState();
-};
-  
   togglePastWeeksBtn.onclick = () => {
   showPastWeeks = !showPastWeeks;
   renderSchedule(true);
