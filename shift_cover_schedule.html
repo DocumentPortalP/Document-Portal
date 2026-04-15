@@ -1203,7 +1203,26 @@ function openTemplateEditorForShift(code, shiftData) {
     editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
     startLiveDateTime();
   }
+function formatShiftTextWithExtras(shift) {
+  const base = shift.members || [];
+  const extras = shift.extraMembers || [];
 
+  const combined = [...base, ...extras];
+
+  const lines = [];
+  for (let i = 0; i < combined.length; i += 2) {
+    const pair = combined.slice(i, i + 2).map(initials => {
+      if (extras.includes(initials)) {
+        return `<strong>${initials}</strong>`;
+      }
+      return initials;
+    });
+
+    lines.push(pair.join(' / '));
+  }
+
+  return lines.join('<br>');
+}
   function renderWeekTable(weekNumber, days){
     const pattern = weekPattern(weekNumber);
     const showNotes = isAdmin();
@@ -1230,7 +1249,7 @@ function openTemplateEditorForShift(code, shiftData) {
           html += `<div class="cell empty"></div>`;
         } else {
           const shift = getCellData(weekNumber, rowIndex, colIndex, code);
-          html += `<div class="cell"><div class="shift ${shift.color} ${shift.isRed ? 'shift-red' : ''}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${shift.text.replace(/\n/g,'<br>')}</div></div></div>`;
+          html += `<div class="cell"><div class="shift ${shift.color} ${shift.isRed ? 'shift-red' : ''}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${formatShiftTextWithExtras(shift)}</div></div></div>`;
         }
       });
 
