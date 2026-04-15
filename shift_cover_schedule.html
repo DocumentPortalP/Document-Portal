@@ -1426,7 +1426,10 @@ function bindClicks(){
       );
 
       cellTitleInput.value = current.title;
-cellTextInput.value = normalizeShiftText(current.text || "");
+
+const baseMembers = getCellBaseMembers(activeCellCode, current);
+cellTextInput.value = buildTextFromMembers(baseMembers);
+
 activeCellExtraMembers = getCellExtraMembers(current);
 activeCellIsRed = !!current.isRed;
 
@@ -1786,7 +1789,7 @@ cellAddEngineerBtn.onclick = () => {
 
   cancelCellBtn.onclick = () => { cellModal.style.display='none'; };
 
-saveCellBtn.onclick = async () => {
+
   if(activeCellKey && activeCellCode){
     const week = +activeCellKey.split('-')[0];
     const base = getTemplateForWeek(activeCellCode, week);
