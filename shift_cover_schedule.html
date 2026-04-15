@@ -5,6 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Shift Planner</title>
 <style>
+  day-type-buttons{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.day-type-btn{
+  width:100%;
+  border:1px solid #d1d5db;
+  background:#f8fafc;
+  color:#111827;
+  font-weight:700;
+  border-radius:12px;
+  padding:12px 14px;
+  cursor:pointer;
+  text-align:center;
+}
+
+.day-type-btn.active{
+  background:#2563eb;
+  color:#fff;
+  border-color:#2563eb;
+  box-shadow:0 6px 16px rgba(37,99,235,.22);
+}
+
+.day-type-btn.defrost-site1.active{
+  background:#0284c7;
+  border-color:#0284c7;
+}
+
+.day-type-btn.defrost-site2.active{
+  background:#0ea5a4;
+  border-color:#0ea5a4;
+}
 body{margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1f2937}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
 h1,h2,h3{margin:0}
@@ -118,7 +153,8 @@ label.radio{display:block;margin:8px 0}
   display:flex;
   gap:10px;
   align-items:center;
-  flex-wrap:nowrap;
+  flex-wrap:wrap;
+  justify-content:flex-end;
 }
 
 .live-datetime{
@@ -248,19 +284,20 @@ label.radio{display:block;margin:8px 0}
   }
 
   .header-actions{
-    display:flex;
-    flex-direction:row;
-    flex-wrap:nowrap;
-    width:100%;
-    gap:8px;
-  }
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  width:100%;
+  gap:8px;
+}
 
-  .header-actions a,
-  .header-actions button{
-    width:50%;
-    min-width:0;
-    margin:0;
-  }
+.header-actions a,
+.header-actions button{
+  width:100%;
+  min-width:0;
+  margin:0;
+  min-height:44px;
+  font-size:15px;
+}
 
   .live-datetime{
     width:100%;
@@ -334,11 +371,11 @@ label.radio{display:block;margin:8px 0}
     padding:2px 6px;
   }
 
-  .header-actions a,
-  .header-actions button{
-    font-size:14px;
-    padding:10px 8px;
-  }
+.header-actions a,
+.header-actions button{
+  font-size:14px;
+  padding:10px 8px;
+}
 
   .live-datetime{
     font-size:12px;
@@ -494,13 +531,12 @@ label.radio{display:block;margin:8px 0}
   <a href="index.html" id="homeBtn" class="secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:12px;">
     Home
   </a>
+  <button id="togglePastWeeksBtn" class="secondary">Show Previous Weeks</button>
   <button id="overtimeBtn" class="secondary">Overtime Summary</button>
   <button id="editTemplatesBtn">Edit Shift Templates</button>
 </div>
     </div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-  <button id="togglePastWeeksBtn" class="secondary" style="display:none;">Show Previous Weeks</button>
-</div>
+    
     <div class="tables" id="tables"></div>
   </div>
 
@@ -578,9 +614,11 @@ label.radio{display:block;margin:8px 0}
     <div class="modal-box">
       <h3>Edit Day Type</h3>
       <div class="small" id="dayModalLabel" style="margin-bottom:12px"></div>
-      <label class="radio"><input type="radio" name="dayType" value="normal"> Normal day</label>
-      <label class="radio"><input type="radio" name="dayType" value="site1"> Site 1 Defrost</label>
-      <label class="radio"><input type="radio" name="dayType" value="site2"> Site 2 Defrost</label>
+     <div id="dayTypeButtons" class="day-type-buttons">
+  <button type="button" class="day-type-btn" data-day-type="normal">Normal Day</button>
+  <button type="button" class="day-type-btn" data-day-type="site1">Site 1 Defrost</button>
+  <button type="button" class="day-type-btn" data-day-type="site2">Site 2 Defrost</button>
+</div>
       <div class="actions">
         <button id="cancelDayBtn" class="secondary">Cancel</button>
         <button id="saveDayBtn">Save</button>
@@ -921,6 +959,7 @@ let activeCellMembers = [];
 let isApplyingRemote = false;
 let unsubscribePlanner = null;
   let activeCellExtraMembers = [];
+  let activeDayType = 'normal';
 
   function weekPattern(week){
     const phase = (week - 14) % 4;
@@ -1325,7 +1364,19 @@ function formatShiftTextWithExtras(shift) {
     html += `</div></div>`;
     return html;
   }
+function updateDayTypeButtons() {
+  document.querySelectorAll('.day-type-btn').forEach(btn => {
+    const value = btn.dataset.dayType;
+    btn.classList.remove('active', 'defrost-site1', 'defrost-site2');
 
+    if (value === activeDayType) {
+      btn.classList.add('active');
+
+      if (value === 'site1') btn.classList.add('defrost-site1');
+      if (value === 'site2') btn.classList.add('defrost-site2');
+    }
+  });
+}
 function bindClicks(){
   document.querySelectorAll('.shift[data-week]').forEach(el => {
     el.onclick = () => {
@@ -1363,12 +1414,11 @@ function bindClicks(){
       activeDayIndex = +el.dataset.dayIndex;
       dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
 
-      const current = dayTypes[activeDayWeek][activeDayIndex];
-      document.querySelectorAll('input[name="dayType"]').forEach(r => {
-        r.checked = (r.value === current);
-      });
+      cconst current = dayTypes[activeDayWeek][activeDayIndex];
+activeDayType = current || 'normal';
+updateDayTypeButtons();
 
-      dayModal.style.display = 'flex';
+dayModal.style.display = 'flex';
     };
   });
 
@@ -1529,11 +1579,9 @@ function renderSchedule(keepScrollPosition = false){
 
   tables.innerHTML = visibleWeeks.map(([week,days]) => renderWeekTable(+week, days)).join('');
 
-  if (togglePastWeeksBtn) {
-    togglePastWeeksBtn.style.display = "inline-block";
-    togglePastWeeksBtn.textContent = showPastWeeks ? "Hide Previous Weeks" : "Show Previous Weeks";
-  }
-
+ if (togglePastWeeksBtn) {
+  togglePastWeeksBtn.textContent = showPastWeeks ? "Hide Previous Weeks" : "Show Previous Weeks";
+}
   bindClicks();
 
   if (keepScrollPosition) {
@@ -1667,14 +1715,14 @@ renderExtraEngineersList();
   cancelDayBtn.onclick = () => { dayModal.style.display='none'; };
 
   saveDayBtn.onclick = async () => {
-    const selected = document.querySelector('input[name="dayType"]:checked');
-    if(selected && activeDayWeek !== null){
-      dayTypes[activeDayWeek][activeDayIndex] = selected.value;
-    }
-    dayModal.style.display='none';
-    renderSchedule();
-    await savePlannerState();
-  };
+  if (activeDayWeek !== null) {
+    dayTypes[activeDayWeek][activeDayIndex] = activeDayType || 'normal';
+  }
+
+  dayModal.style.display = 'none';
+  renderSchedule();
+  await savePlannerState();
+};
 
   cancelNotesBtn.onclick = () => { notesModal.style.display='none'; };
 
@@ -1751,6 +1799,12 @@ closeOvertimeBtn.onclick = () => {
     overtimeModal.style.display = 'none';
   }
 };
+  document.querySelectorAll('.day-type-btn').forEach(btn => {
+  btn.onclick = () => {
+    activeDayType = btn.dataset.dayType;
+    updateDayTypeButtons();
+  };
+});
   renderSchedule();
   updatePermissions();
   bindActivityListeners();
