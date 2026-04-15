@@ -349,6 +349,85 @@ label.radio{display:block;margin:8px 0}
   font-size:13px;
   line-height:1.35;
 }
+  .selected-engineers-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.engineer-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid #dbe2ea;
+  border-radius:12px;
+  background:#f8fafc;
+}
+
+.engineer-row-left{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.engineer-name{
+  font-weight:700;
+  color:#0f172a;
+}
+
+.engineer-initials{
+  font-size:12px;
+  color:#64748b;
+}
+
+.remove-engineer-btn{
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  padding:8px 10px;
+  font-weight:700;
+  cursor:pointer;
+  width:auto;
+  min-height:auto;
+}
+
+.engineer-picker-row{
+  display:flex;
+  gap:10px;
+  align-items:stretch;
+  margin-bottom:12px;
+}
+
+.engineer-picker-row select{
+  margin-bottom:0;
+}
+
+.engineer-picker-row button{
+  width:auto;
+  flex:0 0 auto;
+}
+
+.empty-engineer-note{
+  padding:10px 12px;
+  border:1px dashed #cbd5e1;
+  border-radius:12px;
+  color:#64748b;
+  background:#f8fafc;
+}
+
+@media (max-width: 900px){
+  .engineer-picker-row{
+    flex-direction:column;
+  }
+
+  .engineer-picker-row button{
+    width:100%;
+  }
+}
 </style>
 </head>
 <body>
@@ -404,24 +483,34 @@ label.radio{display:block;margin:8px 0}
     </div>
   </div>
 
-  <div id="modal">
-    <div class="modal-box">
-      <h3>Edit Shift Template</h3>
-      <input id="titleInput" placeholder="Shift title">
-      <textarea id="textInput" rows="4" placeholder="Engineer initials"></textarea>
-      <select id="colorInput">
-        <option value="shift-a">Shift A colour</option>
-        <option value="shift-b">Shift B colour</option>
-        <option value="shift-c">Shift C colour</option>
-        <option value="shift-d">Shift D colour</option>
-      </select>
-      <div class="small">After Save, choose from which week this template change starts.</div>
-      <div class="actions">
-        <button id="cancelBtn" class="secondary">Cancel</button>
-        <button id="saveBtn">Save</button>
-      </div>
+<div id="modal">
+  <div class="modal-box">
+    <h3>Edit Shift Template</h3>
+
+    <input id="titleInput" placeholder="Shift title">
+
+    <div class="small" style="margin-bottom:8px;">Assigned engineers</div>
+    <div id="selectedEngineersList" class="selected-engineers-list"></div>
+
+    <div class="engineer-picker-row">
+      <select id="addEngineerSelect"></select>
+      <button type="button" id="addEngineerBtn">Add</button>
+    </div>
+
+    <select id="colorInput">
+      <option value="shift-a">Shift A colour</option>
+      <option value="shift-b">Shift B colour</option>
+      <option value="shift-c">Shift C colour</option>
+      <option value="shift-d">Shift D colour</option>
+    </select>
+
+    <div class="small">After Save, choose from which week this template change starts.</div>
+    <div class="actions">
+      <button id="cancelBtn" class="secondary">Cancel</button>
+      <button id="saveBtn">Save</button>
     </div>
   </div>
+</div>
 
   <div id="applyModal">
     <div class="modal-box">
@@ -618,6 +707,30 @@ label.radio{display:block;margin:8px 0}
     20: ['Mon 11','Tue 12','Wed 13','Thu 14','Fri 15','Sat 16','Sun 17'],
     21: ['Mon 18','Tue 19','Wed 20','Thu 21','Fri 22','Sat 23','Sun 24']
   };
+  const shiftEngineers = {
+  A: [
+    { initials: "JM", name: "John Malone" },
+    { initials: "CQ", name: "Conor Quinn" },
+    { initials: "FD", name: "Frankie Duffy" },
+    { initials: "AJ", name: "Alan Jennings" }
+  ],
+  B: [
+    { initials: "AL", name: "Al Richardson" },
+    { initials: "ML", name: "Martin Lanigan" },
+    { initials: "JN", name: "John Nolan" }
+  ],
+  C: [
+    { initials: "AM", name: "Andrew Miles" },
+    { initials: "BW", name: "Brian Warnock" },
+    { initials: "SMcT", name: "Seamus McTigue" }
+  ],
+  D: [
+    { initials: "PM", name: "Padraig Mulligan" },
+    { initials: "ED", name: "Eanna Diffley" },
+    { initials: "BS", name: "Brian Smith" },
+    { initials: "MI", name: "Martynas Ilgunaitis" }
+  ]
+};
   const engineerNames = {
   JM: "John Malone",
   CQ: "Conor Quinn",
@@ -682,9 +795,11 @@ label.radio{display:block;margin:8px 0}
   const saveNotesBtn = document.getElementById('saveNotesBtn');
   const cancelCellBtn = document.getElementById('cancelCellBtn');
   const saveCellBtn = document.getElementById('saveCellBtn');
-  const titleInput = document.getElementById('titleInput');
-  const textInput = document.getElementById('textInput');
-  const colorInput = document.getElementById('colorInput');
+ const titleInput = document.getElementById('titleInput');
+const selectedEngineersList = document.getElementById('selectedEngineersList');
+const addEngineerSelect = document.getElementById('addEngineerSelect');
+const addEngineerBtn = document.getElementById('addEngineerBtn');
+const colorInput = document.getElementById('colorInput');
   const applyWeekInput = document.getElementById('applyWeekInput');
   const dayModalLabel = document.getElementById('dayModalLabel');
   const notesModalLabel = document.getElementById('notesModalLabel');
@@ -705,9 +820,10 @@ label.radio{display:block;margin:8px 0}
     applyWeekInput.appendChild(opt);
   });
 
-  let activeShift = 'A';
-  let pendingTemplateData = null;
-  let activeDayWeek = null;
+let activeShift = 'A';
+let activeTemplateMembers = [];
+let pendingTemplateData = null;
+let activeDayWeek = null;
   let activeDayIndex = null;
   let activeNotesWeek = null;
   let activeCellKey = null;
@@ -772,6 +888,111 @@ label.radio{display:block;margin:8px 0}
         .join('<br>');
     })
     .join('<br><br>');
+}
+  function getAllKnownInitials() {
+  return Object.values(shiftEngineers).flat().map(x => x.initials);
+}
+
+function extractInitialsFromText(text) {
+  if (!text) return [];
+  const known = getAllKnownInitials().sort((a, b) => b.length - a.length);
+  const regex = new RegExp(`\\b(${known.join('|')})\\b`, 'g');
+  return [...text.matchAll(regex)].map(m => m[1]);
+}
+
+function getTemplateMembersFromData(code, data) {
+  if (Array.isArray(data.members) && data.members.length) {
+    return [...data.members];
+  }
+  return extractInitialsFromText(data.text || "");
+}
+
+function buildTextFromMembers(members) {
+  const lines = [];
+  for (let i = 0; i < members.length; i += 2) {
+    lines.push(members.slice(i, i + 2).join(' / '));
+  }
+  return lines.join('\n');
+}
+
+function getEngineerByInitials(code, initials) {
+  return (shiftEngineers[code] || []).find(e => e.initials === initials) || null;
+}
+
+function formatShiftPeopleForEditor(code, data) {
+  const members = getTemplateMembersFromData(code, data);
+  return members.map(initials => {
+    const person = getEngineerByInitials(code, initials);
+    if (!person) return initials;
+    return `${person.name} (${person.initials})`;
+  }).join('<br>');
+}
+
+function renderSelectedEngineers() {
+  if (!selectedEngineersList) return;
+
+  if (!activeTemplateMembers.length) {
+    selectedEngineersList.innerHTML = `<div class="empty-engineer-note">No engineers added yet.</div>`;
+  } else {
+    selectedEngineersList.innerHTML = activeTemplateMembers.map(initials => {
+      const person = getEngineerByInitials(activeShift, initials);
+      const name = person ? person.name : initials;
+
+      return `
+        <div class="engineer-row">
+          <div class="engineer-row-left">
+            <div class="engineer-name">${name}</div>
+            <div class="engineer-initials">${initials}</div>
+          </div>
+          <button type="button" class="remove-engineer-btn" data-remove-engineer="${initials}">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  selectedEngineersList.querySelectorAll('[data-remove-engineer]').forEach(btn => {
+    btn.onclick = () => {
+      const initials = btn.dataset.removeEngineer;
+      activeTemplateMembers = activeTemplateMembers.filter(x => x !== initials);
+      renderSelectedEngineers();
+      renderAddEngineerOptions();
+    };
+  });
+}
+
+function renderAddEngineerOptions() {
+  if (!addEngineerSelect) return;
+
+  const available = (shiftEngineers[activeShift] || []).filter(
+    person => !activeTemplateMembers.includes(person.initials)
+  );
+
+  if (!available.length) {
+    addEngineerSelect.innerHTML = `<option value="">No more engineers available</option>`;
+    addEngineerSelect.disabled = true;
+    addEngineerBtn.disabled = true;
+    return;
+  }
+
+  addEngineerSelect.disabled = false;
+  addEngineerBtn.disabled = false;
+
+  addEngineerSelect.innerHTML = available.map(person => `
+    <option value="${person.initials}">${person.name} (${person.initials})</option>
+  `).join('');
+}
+
+function openTemplateEditorForShift(code, shiftData) {
+  activeShift = code;
+  activeTemplateMembers = getTemplateMembersFromData(code, shiftData);
+
+  titleInput.value = shiftData.title;
+  colorInput.value = shiftData.color;
+
+  renderSelectedEngineers();
+  renderAddEngineerOptions();
+
+  modal.style.display = 'flex';
 }
 
   function updateCellRedButton(){
@@ -983,21 +1204,15 @@ function renderSchedule(keepScrollPosition = false){
   <div class="day">${shift.title}</div>
   <div class="shift ${shift.color}" style="margin-bottom:12px">
     <div class="shift-title">${shift.title}</div>
-    <div class="shift-text">${formatShiftPeople(shift.text)}</div>
+    <div class="shift-text">${formatShiftPeopleForEditor(key, shift)}</div>
   </div>
   <div class="small">Click to edit this template.</div>
 `;
 
-      el.onclick = () => {
-        if (!isAdmin()) return;
-
-        activeShift = key;
-        titleInput.value = shift.title;
-        textInput.value = shift.text;
-        colorInput.value = shift.color;
-
-        modal.style.display = 'flex';
-      };
+el.onclick = () => {
+  if (!isAdmin()) return;
+  openTemplateEditorForShift(key, shift);
+};
 
       cards.appendChild(el);
     });
@@ -1028,12 +1243,30 @@ function renderSchedule(keepScrollPosition = false){
   };
 
   cancelBtn.onclick = () => { modal.style.display='none'; };
+  addEngineerBtn.onclick = () => {
+  const initials = addEngineerSelect.value;
 
-  saveBtn.onclick = () => {
-    pendingTemplateData = { title:titleInput.value, text:textInput.value, color:colorInput.value, isRed:false };
-    modal.style.display='none';
-    applyModal.style.display='flex';
+  if (!initials) return;
+
+  if (activeTemplateMembers.includes(initials)) return;
+
+  activeTemplateMembers.push(initials);
+
+  renderSelectedEngineers();
+  renderAddEngineerOptions();
+};
+
+ saveBtn.onclick = () => {
+  pendingTemplateData = {
+    title: titleInput.value,
+    text: buildTextFromMembers(activeTemplateMembers),
+    members: [...activeTemplateMembers],
+    color: colorInput.value,
+    isRed: false
   };
+  modal.style.display='none';
+  applyModal.style.display='flex';
+};
 
   cancelApplyBtn.onclick = () => {
     applyModal.style.display='none';
