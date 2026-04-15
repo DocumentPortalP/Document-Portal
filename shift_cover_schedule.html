@@ -1414,7 +1414,7 @@ function bindClicks(){
       activeDayIndex = +el.dataset.dayIndex;
       dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
 
-      cconst current = dayTypes[activeDayWeek][activeDayIndex];
+      const current = dayTypes[activeDayWeek][activeDayIndex];
 activeDayType = current || 'normal';
 updateDayTypeButtons();
 
