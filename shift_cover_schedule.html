@@ -1047,10 +1047,17 @@ function getTemplateMembersFromData(code, data) {
   return extractInitialsFromText(data.text || "");
 }
   function getCellBaseMembers(code, data) {
-  if (Array.isArray(data.members) && data.members.length) {
+  if (Array.isArray(data.members)) {
     return [...data.members];
   }
-  return extractInitialsFromText(data.text || "");
+
+  const template = getTemplateForWeek(code, 14);
+
+  if (Array.isArray(template.members)) {
+    return [...template.members];
+  }
+
+  return extractInitialsFromText(template.text || "");
 }
 
 function getCellExtraMembers(data) {
