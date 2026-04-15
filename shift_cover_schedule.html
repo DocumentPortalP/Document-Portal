@@ -1121,17 +1121,6 @@ function openTemplateEditorForShift(code, shiftData) {
   modal.style.display = 'flex';
 }
 
-function updateCellRedButton(){
-  if (!cellRedToggleBtn) return;
-
-  if (activeCellIsRed) {
-    cellRedToggleBtn.textContent = "Marked Red";
-    cellRedToggleBtn.classList.add("red-toggle-active");
-  } else {
-    cellRedToggleBtn.textContent = "Mark Red";
-    cellRedToggleBtn.classList.remove("red-toggle-active");
-  }
-}
 
   function updateCellRedButton(){
     if (!cellRedToggleBtn) return;
