@@ -428,6 +428,51 @@ label.radio{display:block;margin:8px 0}
     width:100%;
   }
 }
+  #overtimeModal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:20;
+}
+
+.overtime-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:#fff;
+  border:1px solid #dbe2ea;
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.overtime-table th,
+.overtime-table td{
+  padding:10px 12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+  font-size:14px;
+}
+
+.overtime-table th{
+  background:#e2e8f0;
+  font-weight:800;
+}
+
+.overtime-table tr:last-child td{
+  border-bottom:none;
+}
+
+.overtime-empty{
+  padding:14px;
+  border:1px dashed #cbd5e1;
+  border-radius:12px;
+  background:#f8fafc;
+  color:#64748b;
+}
 </style>
 </head>
 <body>
@@ -1740,51 +1785,7 @@ closeOvertimeBtn.onclick = () => {
     };
   });
 }
-  #overtimeModal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  z-index:20;
-}
-
-.overtime-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-  background:#fff;
-  border:1px solid #dbe2ea;
-  border-radius:14px;
-  overflow:hidden;
-}
-
-.overtime-table th,
-.overtime-table td{
-  padding:10px 12px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:left;
-  font-size:14px;
-}
-
-.overtime-table th{
-  background:#e2e8f0;
-  font-weight:800;
-}
-
-.overtime-table tr:last-child td{
-  border-bottom:none;
-}
-
-.overtime-empty{
-  padding:14px;
-  border:1px dashed #cbd5e1;
-  border-radius:12px;
-  background:#f8fafc;
-  color:#64748b;
-}
+  
 </script>
 </body>
 </html>
