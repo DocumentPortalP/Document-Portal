@@ -581,7 +581,6 @@ label.radio{display:block;margin:8px 0}
     </div>
   </div>
 </div>
-</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -996,10 +995,12 @@ function renderCellSelectedEngineers() {
       const initials = btn.dataset.removeCellEngineer;
       activeCellMembers = activeCellMembers.filter(x => x !== initials);
       renderCellSelectedEngineers();
+      renderCellAddEngineerOptions();
     };
   });
 }
-  function renderCellExtraEngineers() {
+
+function renderCellExtraEngineers() {
   if (!cellExtraEngineersList) return;
 
   if (!activeCellExtraMembers.length) {
@@ -1028,7 +1029,8 @@ function renderCellSelectedEngineers() {
       renderCellExtraEngineers();
       renderCellAddEngineerOptions();
     };
-  })
+  });
+}
 
 function renderCellAddEngineerOptions() {
   if (!cellAddEngineerSelect) return;
@@ -1050,6 +1052,85 @@ function renderCellAddEngineerOptions() {
   cellAddEngineerSelect.innerHTML = available.map(person => `
     <option value="${person.initials}">${person.name} (${person.initials})</option>
   `).join('');
+}
+
+function renderSelectedEngineers() {
+  if (!selectedEngineersList) return;
+
+  if (!activeTemplateMembers.length) {
+    selectedEngineersList.innerHTML = `<div class="empty-engineer-note">No engineers added yet.</div>`;
+  } else {
+    selectedEngineersList.innerHTML = activeTemplateMembers.map(initials => {
+      const person = getEngineerByInitials(activeShift, initials);
+      const name = person ? person.name : initials;
+
+      return `
+        <div class="engineer-row">
+          <div class="engineer-row-left">
+            <div class="engineer-name">${name}</div>
+            <div class="engineer-initials">${initials}</div>
+          </div>
+          <button type="button" class="remove-engineer-btn" data-remove-engineer="${initials}">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  selectedEngineersList.querySelectorAll('[data-remove-engineer]').forEach(btn => {
+    btn.onclick = () => {
+      const initials = btn.dataset.removeEngineer;
+      activeTemplateMembers = activeTemplateMembers.filter(x => x !== initials);
+      renderSelectedEngineers();
+      renderAddEngineerOptions();
+    };
+  });
+}
+
+function renderAddEngineerOptions() {
+  if (!addEngineerSelect) return;
+
+  const available = (shiftEngineers[activeShift] || []).filter(
+    person => !activeTemplateMembers.includes(person.initials)
+  );
+
+  if (!available.length) {
+    addEngineerSelect.innerHTML = `<option value="">No more engineers available</option>`;
+    addEngineerSelect.disabled = true;
+    addEngineerBtn.disabled = true;
+    return;
+  }
+
+  addEngineerSelect.disabled = false;
+  addEngineerBtn.disabled = false;
+
+  addEngineerSelect.innerHTML = available.map(person => `
+    <option value="${person.initials}">${person.name} (${person.initials})</option>
+  `).join('');
+}
+
+function openTemplateEditorForShift(code, shiftData) {
+  activeShift = code;
+  activeTemplateMembers = getTemplateMembersFromData(code, shiftData);
+
+  titleInput.value = shiftData.title;
+  colorInput.value = shiftData.color;
+
+  renderSelectedEngineers();
+  renderAddEngineerOptions();
+
+  modal.style.display = 'flex';
+}
+
+function updateCellRedButton(){
+  if (!cellRedToggleBtn) return;
+
+  if (activeCellIsRed) {
+    cellRedToggleBtn.textContent = "Marked Red";
+    cellRedToggleBtn.classList.add("red-toggle-active");
+  } else {
+    cellRedToggleBtn.textContent = "Mark Red";
+    cellRedToggleBtn.classList.remove("red-toggle-active");
+  }
 }
 
   function updateCellRedButton(){
@@ -1110,11 +1191,6 @@ function renderCellAddEngineerOptions() {
     cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
     possibleCovers = data?.possibleCovers || "";
     extraEngineers = data?.extraEngineers ? cloneData(data.extraEngineers) : [];
-
-    if (possibleCoversInput) {
-      possibleCoversInput.value = possibleCovers;
-    }
-
     renderSchedule();
     if (editorView.style.display === "block") renderEditor();
 
@@ -1361,17 +1437,7 @@ renderExtraEngineersList();
   renderSelectedEngineers();
   renderAddEngineerOptions();
 };
-  cellAddEngineerBtn.onclick = () => {
-  const initials = cellAddEngineerSelect.value;
 
-  if (!initials) return;
-  if (activeCellMembers.includes(initials)) return;
-
-  activeCellMembers.push(initials);
-
-  renderCellSelectedEngineers();
-  renderCellAddEngineerOptions();
-};
 
  saveBtn.onclick = () => {
   pendingTemplateData = {
