@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Shift Planner</title>
 <style>
   .day-type-buttons{
@@ -40,13 +40,14 @@
   background:#0ea5a4;
   border-color:#0ea5a4;
 }
+html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1f2937}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
 h1,h2,h3{margin:0}
 button{padding:10px 16px;border:none;border-radius:12px;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer}
 button.secondary{background:#e5e7eb;color:#111827}
 .tables{display:grid;gap:24px}
-.table-card,.editor{background:#fff;border:1px solid #dbe2ea;border-radius:24px;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.08)}
+.table-card,.editor{background:#fff;border:1px solid #dbe2ea;border-radius:24px;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.08);-webkit-overflow-scrolling:touch}
 .editor{display:none;padding:24px}
 
 /* NORMAL GRID = with notes */
@@ -96,8 +97,8 @@ button.secondary{background:#e5e7eb;color:#111827}
 .header-cell.day-selectable.defrost{background:linear-gradient(180deg,#bfe7fb,#8ed1f7);color:#0f172a}
 .day-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .day-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.78);font-size:11px;font-weight:700;line-height:1.1;box-shadow:0 1px 4px rgba(15,23,42,.08)}
-#modal,#applyModal,#cellModal,#dayModal,#notesModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
-.modal-box{background:#fff;border-radius:20px;padding:20px;width:380px;max-width:100%}
+#modal,#applyModal,#cellModal,#dayModal,#notesModal,#overtimeModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:20px;z-index:50;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-box{background:#fff;border-radius:20px;padding:20px;width:min(560px,100%);max-width:100%;max-height:calc(100dvh - 40px);overflow-y:auto;box-sizing:border-box;margin:auto 0;box-shadow:0 20px 40px rgba(15,23,42,.22)}
 input,textarea,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:12px;box-sizing:border-box;font:inherit}
 .actions{display:flex;justify-content:flex-end;gap:10px}
 label.radio{display:block;margin:8px 0}
@@ -192,6 +193,7 @@ label.radio{display:block;margin:8px 0}
     flex-direction:column;
     align-items:stretch;
     gap:10px;
+    padding:10px 0 12px;
   }
 
   .header h1,
@@ -200,7 +202,6 @@ label.radio{display:block;margin:8px 0}
   }
 
   button{
-    width:100%;
     min-height:44px;
     font-size:15px;
   }
@@ -278,6 +279,12 @@ label.radio{display:block;margin:8px 0}
     width:min(100%, 96vw);
     padding:16px;
     border-radius:16px;
+    max-height:calc(100dvh - 24px);
+  }
+
+  #cellModal .modal-box,
+  #overtimeModal .modal-box{
+    width:min(100%, 96vw) !important;
   }
 
   input, textarea, select{
@@ -290,35 +297,33 @@ label.radio{display:block;margin:8px 0}
 
   .header-top{
     flex-direction:column;
-    align-items:flex-start;
+    align-items:stretch;
   }
 
   .header-actions{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0,1fr));
-  width:100%;
-  gap:8px;
-}
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    width:100%;
+    gap:8px;
+  }
 
-.header-actions a,
-.header-actions button{
-  width:100%;
-  min-width:0;
-  margin:0;
-  min-height:44px;
-  font-size:15px;
-}
+  .header-actions a,
+  .header-actions button{
+    width:100%;
+    min-width:0;
+    margin:0;
+    min-height:44px;
+    font-size:15px;
+  }
+
+  #homeBtn{
+    grid-column:1 / -1;
+  }
 
   .live-datetime{
     width:100%;
     text-align:center;
     font-size:13px;
-  }
-
-  .header-actions button{
-    width:50%;
-    min-height:44px;
-    font-size:15px;
   }
 }
 
@@ -381,11 +386,15 @@ label.radio{display:block;margin:8px 0}
     padding:2px 6px;
   }
 
-.header-actions a,
-.header-actions button{
-  font-size:14px;
-  padding:10px 8px;
-}
+  .header-actions{
+    grid-template-columns:1fr;
+  }
+
+  .header-actions a,
+  .header-actions button{
+    font-size:14px;
+    padding:10px 8px;
+  }
 
   .live-datetime{
     font-size:12px;
@@ -475,17 +484,7 @@ label.radio{display:block;margin:8px 0}
     width:100%;
   }
 }
-  #overtimeModal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  z-index:20;
-}
-
+  
 .overtime-table{
   width:100%;
   border-collapse:collapse;
@@ -649,7 +648,7 @@ label.radio{display:block;margin:8px 0}
   </div>
 
   <div id="cellModal">
-  <div class="modal-box">
+  <div class="modal-box" style="width:min(640px,100%);">
     <h3>Edit Single Shift Cell</h3>
 
     <input id="cellTitleInput" placeholder="Shift title">
@@ -931,7 +930,6 @@ const colorInput = document.getElementById('colorInput');
   const notesModalLabel = document.getElementById('notesModalLabel');
   const notesInput = document.getElementById('notesInput');
   const cellTitleInput = document.getElementById('cellTitleInput');
-const cellSelectedEngineersList = document.getElementById('cellSelectedEngineersList');
 const cellAddEngineerSelect = document.getElementById('cellAddEngineerSelect');
 const cellAddEngineerBtn = document.getElementById('cellAddEngineerBtn');
 const cellRedToggleBtn = document.getElementById('cellRedToggleBtn');
@@ -1086,38 +1084,6 @@ function formatShiftPeopleForEditor(code, data) {
     if (!person) return initials;
     return `${person.name} (${person.initials})`;
   }).join('<br>');
-}
-
-function renderCellSelectedEngineers() {
-  if (!cellSelectedEngineersList) return;
-
-  if (!activeCellMembers.length) {
-    cellSelectedEngineersList.innerHTML = `<div class="empty-engineer-note">No base engineers in this cell.</div>`;
-  } else {
-    cellSelectedEngineersList.innerHTML = activeCellMembers.map(initials => {
-      const person = getEngineerByInitials(activeCellCode, initials) || getEngineerByInitialsGlobal(initials);
-      const name = person ? person.name : initials;
-
-      return `
-        <div class="engineer-row">
-          <div class="engineer-row-left">
-            <div class="engineer-name">${name}</div>
-            <div class="engineer-initials">${initials}</div>
-          </div>
-          <button type="button" class="remove-engineer-btn" data-remove-cell-engineer="${initials}">✕</button>
-        </div>
-      `;
-    }).join('');
-  }
-
-  cellSelectedEngineersList.querySelectorAll('[data-remove-cell-engineer]').forEach(btn => {
-    btn.onclick = () => {
-      const initials = btn.dataset.removeCellEngineer;
-      activeCellMembers = activeCellMembers.filter(x => x !== initials);
-      renderCellSelectedEngineers();
-      renderCellAddEngineerOptions();
-    };
-  });
 }
 
 function renderCellExtraEngineers() {
@@ -1853,6 +1819,13 @@ closeOvertimeBtn.onclick = () => {
     updateDayTypeButtons();
   };
 });
+  [modal, applyModal, dayModal, notesModal, cellModal].forEach(modalEl => {
+  modalEl.onclick = (e) => {
+    if (e.target === modalEl) {
+      modalEl.style.display = 'none';
+    }
+  };
+});
   if (cellTextInput) { cellTextInput.addEventListener('input', () => { renderCellAddEngineerOptions(); }); }
   renderSchedule();
   updatePermissions();
@@ -1893,3 +1866,4 @@ closeOvertimeBtn.onclick = () => {
 </script>
 </body>
 </html>
+
