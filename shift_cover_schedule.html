@@ -569,6 +569,16 @@ label.radio{display:block;margin:8px 0}
   }
 }
 
+
+#roleBadge.admin-badge{
+  background:#dbeafe;
+  color:#1d4ed8;
+}
+#roleBadge.engineer-badge{
+  background:#e5e7eb;
+  color:#111827;
+}
+
 </style>
 </head>
 <body>
@@ -583,7 +593,10 @@ label.radio{display:block;margin:8px 0}
     <div class="header">
       <div class="header-top">
         <h1>Shift Planner</h1>
-        <div id="liveDateTime" class="live-datetime" style="display:none;"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div id="roleBadge" class="live-datetime" style="display:none;"></div>
+          <div id="liveDateTime" class="live-datetime" style="display:none;"></div>
+        </div>
       </div>
 
       <div class="header-actions">
@@ -704,7 +717,8 @@ label.radio{display:block;margin:8px 0}
     <input id="cellTitleInput" placeholder="Shift title">
 
 <div class="small" style="margin-bottom:8px;">Current shift engineers</div>
-<textarea id="cellTextInput" rows="4" placeholder="Example: JM / CQ&#10;FD / AJ"></textarea>\n<div class="small" style="margin-top:-6px;margin-bottom:12px;">You can manually type any initials here.</div>
+<textarea id="cellTextInput" rows="4" placeholder="Example: JM / CQ&#10;FD / AJ"></textarea>
+<div class="small" style="margin-top:-6px;margin-bottom:12px;">You can manually type any initials here.</div>
 
     <div class="small" style="margin:12px 0 8px;">Extra shift engineers</div>
     <div id="cellExtraEngineersList" class="selected-engineers-list"></div>
@@ -754,7 +768,11 @@ label.radio{display:block;margin:8px 0}
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const ROLE_PINS = { "0000": "engineer", "Eng2022": "admin" };
+  const ROLE_PINS = {
+    "0000": "engineer",
+    "Eng2022": "admin",
+    "eng2022": "admin"
+  };
 
   const lockscreen = document.getElementById("lockscreen");
   const pinInput = document.getElementById("pinInput");
@@ -763,6 +781,43 @@ label.radio{display:block;margin:8px 0}
   const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
   let logoutTimer = null;
   let liveClockInterval = null;
+
+  const roleBadge = document.getElementById("roleBadge");
+
+  function getNormalizedPin(value) {
+    return String(value || "").replace(/\s+/g, "").trim();
+  }
+
+  function getRoleFromPin(value) {
+    const pin = getNormalizedPin(value);
+    if (!pin) return "";
+    return ROLE_PINS[pin] || "";
+  }
+
+  function updateRoleBadge() {
+    if (!roleBadge) return;
+
+    const role = getRole();
+
+    if (!role) {
+      roleBadge.style.display = "none";
+      roleBadge.textContent = "";
+      roleBadge.classList.remove("admin-badge", "engineer-badge");
+      return;
+    }
+
+    roleBadge.style.display = "inline-flex";
+    roleBadge.classList.remove("admin-badge", "engineer-badge");
+    roleBadge.classList.add(role === "admin" ? "admin-badge" : "engineer-badge");
+    roleBadge.textContent = role === "admin" ? "Admin Mode" : "Engineer Mode";
+  }
+
+  function clearSavedRoleIfInvalid() {
+    const saved = sessionStorage.getItem("shiftRole");
+    if (saved !== "admin" && saved !== "engineer") {
+      sessionStorage.removeItem("shiftRole");
+    }
+  }
 
   function getRole() {
     return sessionStorage.getItem("shiftRole") || "";
@@ -814,12 +869,20 @@ label.radio{display:block;margin:8px 0}
   }
 
   function unlock(role) {
+    if (role !== "admin" && role !== "engineer") return;
+
     sessionStorage.setItem("shiftRole", role);
     lockscreen.style.display = "none";
+    pinInput.value = "";
+    pinMsg.style.display = "none";
+
     updatePermissions();
+    updateRoleBadge();
     startRealtimeSync();
     startLiveDateTime();
     resetLogoutTimer();
+
+    console.log("Logged in as:", role);
   }
 
   function resetLogoutTimer() {
@@ -842,9 +905,10 @@ label.radio{display:block;margin:8px 0}
   }
 
   function checkPin() {
-    const value = (pinInput.value || "").trim();
-    const role = ROLE_PINS[value];
+    const role = getRoleFromPin(pinInput.value);
+
     if (role) {
+      sessionStorage.removeItem("shiftRole");
       pinMsg.style.display = "none";
       unlock(role);
     } else {
@@ -1402,6 +1466,7 @@ function openTemplateEditorForShift(code, shiftData) {
 
   function updatePermissions(){
     editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
+    updateRoleBadge();
     startLiveDateTime();
   }
 function formatShiftTextWithExtras(shift) {
@@ -1572,25 +1637,9 @@ updateCellRedButton();
 
 cellModal.style.display = 'flex';
 
-/* ===== Auto focus fix for cell text input ===== */
-setTimeout(() => {
-  const txt = document.getElementById('cellTextInput');
-  if (txt) {
-    txt.removeAttribute('readonly');
-    txt.removeAttribute('disabled');
-
-    const forceFocus = () => {
-      txt.focus();
-      txt.click();
-      const end = txt.value.length;
-      try { txt.setSelectionRange(end, end); } catch(e){}
-    };
-
-    setTimeout(forceFocus, 50);
-    txt.addEventListener('touchstart', forceFocus, { passive:true });
-    txt.addEventListener('click', forceFocus);
-  }
-}, 50);
+requestAnimationFrame(() => {
+  cellTextInput?.focus();
+});
 
     };
   });
@@ -1949,7 +1998,7 @@ cellAddEngineerBtn.onclick = () => {
     const week = +activeCellKey.split('-')[0];
     const base = getTemplateForWeek(activeCellCode, week);
 
-    const manualBaseText = normalizeShiftText(cellTextInput.value || "");
+    const manualBaseText = cellTextInput.value || "";
     const baseMembers = extractInitialsFromText(manualBaseText);
     const combinedText = buildCombinedShiftText(manualBaseText, activeCellExtraMembers);
 
@@ -2009,11 +2058,14 @@ closeOvertimeBtn.onclick = () => {
 });
   if (cellTextInput) { cellTextInput.addEventListener('input', () => { renderCellAddEngineerOptions(); }); }
   renderSchedule();
+  clearSavedRoleIfInvalid();
   updatePermissions();
   bindActivityListeners();
 
   if (sessionStorage.getItem("shiftRole")) {
     unlock(sessionStorage.getItem("shiftRole"));
+  } else {
+    updateRoleBadge();
   }
   function renderExtraEngineersList() {
   if (!extraEngineersList) return;
