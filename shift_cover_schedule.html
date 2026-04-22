@@ -519,6 +519,56 @@ label.radio{display:block;margin:8px 0}
   background:#f8fafc;
   color:#64748b;
 }
+
+/* ===== Textbox + Mobile Modal Fix ===== */
+#cellModal{
+  padding:12px;
+  align-items:center;
+  justify-content:center;
+}
+
+#cellModal .modal-box{
+  width:min(95vw,700px);
+  max-height:90vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+#cellTextInput,
+#cellModal textarea,
+#cellModal input,
+#cellModal select{
+  pointer-events:auto !important;
+  touch-action:manipulation;
+  -webkit-user-select:text;
+  user-select:text;
+  font-size:16px !important;
+}
+
+#cellTextInput{
+  min-height:120px;
+  width:100%;
+  resize:vertical;
+}
+
+@media (max-width:700px){
+  header .controls,
+  .top-controls,
+  .header-controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  #cellModal .modal-box{
+    width:100%;
+    max-width:100%;
+    margin:0;
+    border-radius:14px;
+    max-height:92vh;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1412,6 +1462,27 @@ renderCellAddEngineerOptions();
 updateCellRedButton();
 
 cellModal.style.display = 'flex';
+
+/* ===== Auto focus fix for cell text input ===== */
+setTimeout(() => {
+  const txt = document.getElementById('cellTextInput');
+  if (txt) {
+    txt.removeAttribute('readonly');
+    txt.removeAttribute('disabled');
+
+    const forceFocus = () => {
+      txt.focus();
+      txt.click();
+      const end = txt.value.length;
+      try { txt.setSelectionRange(end, end); } catch(e){}
+    };
+
+    setTimeout(forceFocus, 50);
+    txt.addEventListener('touchstart', forceFocus, { passive:true });
+    txt.addEventListener('click', forceFocus);
+  }
+}, 50);
+
     };
   });
 
@@ -1866,4 +1937,3 @@ closeOvertimeBtn.onclick = () => {
 </script>
 </body>
 </html>
-
