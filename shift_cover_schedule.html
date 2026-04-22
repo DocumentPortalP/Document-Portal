@@ -569,6 +569,14 @@ label.radio{display:block;margin:8px 0}
   }
 }
 
+
+#cellTextInput{
+  -webkit-user-select:text;
+  user-select:text;
+  pointer-events:auto;
+  touch-action:manipulation;
+}
+
 </style>
 </head>
 <body>
@@ -1461,27 +1469,14 @@ renderCellExtraEngineers();
 renderCellAddEngineerOptions();
 updateCellRedButton();
 
+
 cellModal.style.display = 'flex';
 
-/* ===== Auto focus fix for cell text input ===== */
-setTimeout(() => {
-  const txt = document.getElementById('cellTextInput');
-  if (txt) {
-    txt.removeAttribute('readonly');
-    txt.removeAttribute('disabled');
+requestAnimationFrame(() => {
+  cellTextInput?.focus();
+});
 
-    const forceFocus = () => {
-      txt.focus();
-      txt.click();
-      const end = txt.value.length;
-      try { txt.setSelectionRange(end, end); } catch(e){}
-    };
 
-    setTimeout(forceFocus, 50);
-    txt.addEventListener('touchstart', forceFocus, { passive:true });
-    txt.addEventListener('click', forceFocus);
-  }
-}, 50);
 
     };
   });
