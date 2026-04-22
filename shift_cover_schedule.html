@@ -1388,11 +1388,27 @@ function openTemplateEditorForShift(code, shiftData) {
     isApplyingRemote = true;
 
     templateVersions = data?.templateVersions ? cloneData(data.templateVersions) : cloneData(defaultTemplateVersions);
-    weekNotes = data?.weekNotes ? cloneData(data.weekNotes) : cloneData(defaultWeekNotes);
-    dayTypes = data?.dayTypes ? cloneData(data.dayTypes) : cloneData(defaultDayTypes);
+
+    weekNotes = cloneData(defaultWeekNotes);
+    if (data?.weekNotes) {
+      Object.keys(data.weekNotes).forEach(key => {
+        weekNotes[key] = data.weekNotes[key];
+      });
+    }
+
+    dayTypes = cloneData(defaultDayTypes);
+    if (data?.dayTypes) {
+      Object.keys(data.dayTypes).forEach(key => {
+        if (Array.isArray(data.dayTypes[key])) {
+          dayTypes[key] = [...data.dayTypes[key]];
+        }
+      });
+    }
+
     cellOverrides = data?.cellOverrides ? cloneData(data.cellOverrides) : {};
     possibleCovers = data?.possibleCovers || "";
     extraEngineers = data?.extraEngineers ? cloneData(data.extraEngineers) : [];
+
     renderSchedule();
     if (editorView.style.display === "block") renderEditor();
 
@@ -1429,7 +1445,7 @@ function formatShiftTextWithExtras(shift) {
     html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
 
     days.forEach((day, dayIndex) => {
-      const type = dayTypes[weekNumber][dayIndex];
+      const type = (dayTypes[weekNumber] && dayTypes[weekNumber][dayIndex]) ? dayTypes[weekNumber][dayIndex] : 'normal';
       const defrost = type !== 'normal';
       const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
       html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
@@ -1912,6 +1928,9 @@ renderExtraEngineersList();
 
   saveDayBtn.onclick = async () => {
   if (activeDayWeek !== null) {
+    if (!Array.isArray(dayTypes[activeDayWeek])) {
+      dayTypes[activeDayWeek] = Array(7).fill('normal');
+    }
     dayTypes[activeDayWeek][activeDayIndex] = activeDayType || 'normal';
   }
 
