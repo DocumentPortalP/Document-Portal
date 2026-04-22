@@ -1461,12 +1461,14 @@ function escapeHtml(value) {
 }
 
 function formatManualShiftText(baseText, extraMembers) {
-  const lines = (baseText || "")
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean);
+  const lines = String(baseText || "")
+    .replace(/\r/g, '')
+    .split('\n');
 
-  const htmlLines = lines.map(line => escapeHtml(line).replace(/\s*\/\s*/g, ' / '));
+  const htmlLines = lines.map(line => {
+    if (!line.trim()) return '&nbsp;';
+    return escapeHtml(line);
+  });
 
   if (extraMembers && extraMembers.length) {
     for (let i = 0; i < extraMembers.length; i += 2) {
