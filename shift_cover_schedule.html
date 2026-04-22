@@ -613,19 +613,30 @@ label.radio{display:block;margin:8px 0}
         <div id="cards" class="cards"></div>
       </div>
 
-      <div class="card" style="cursor:default">
-  <div class="day">Extra Engineers / Covers</div>
-  <div class="small" style="margin-bottom:10px">Create additional engineers that can be assigned as extra cover in any shift.</div>
+      <div style="display:grid;gap:16px;">
+        <div class="card" style="cursor:default">
+          <div class="day">Possible Covers</div>
+          <div class="small" style="margin-bottom:10px">Use this box for any notes, names or possible covers you want to keep on the right side.</div>
+          <textarea id="possibleCoversInput" placeholder="Example:
+John / Martin
+Maybe night cover on Friday
+Call agency if needed"></textarea>
+        </div>
 
-  <input id="newEngineerNameInput" placeholder="Full name">
-  <input id="newEngineerInitialsInput" placeholder="Initials">
+        <div class="card" style="cursor:default">
+          <div class="day">Extra Engineers / Covers</div>
+          <div class="small" style="margin-bottom:10px">Create additional engineers that can be assigned as extra cover in any shift.</div>
 
-  <div class="actions" style="margin-bottom:12px;">
-    <button id="addNewEngineerBtn">Add Engineer</button>
-  </div>
+          <input id="newEngineerNameInput" placeholder="Full name">
+          <input id="newEngineerInitialsInput" placeholder="Initials">
 
-  <div id="extraEngineersList" class="selected-engineers-list"></div>
-</div>
+          <div class="actions" style="margin-bottom:12px;">
+            <button id="addNewEngineerBtn">Add Engineer</button>
+          </div>
+
+          <div id="extraEngineersList" class="selected-engineers-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -704,7 +715,8 @@ label.radio{display:block;margin:8px 0}
     <input id="cellTitleInput" placeholder="Shift title">
 
 <div class="small" style="margin-bottom:8px;">Current shift engineers</div>
-<textarea id="cellTextInput" rows="4" placeholder="Example: JM / CQ&#10;FD / AJ"></textarea>\n<div class="small" style="margin-top:-6px;margin-bottom:12px;">You can manually type any initials here.</div>
+<textarea id="cellTextInput" rows="4" placeholder="Example: JM / CQ&#10;FD / AJ"></textarea>
+<div class="small" style="margin-top:-6px;margin-bottom:12px;">You can manually type any initials here.</div>
 
     <div class="small" style="margin:12px 0 8px;">Extra shift engineers</div>
     <div id="cellExtraEngineersList" class="selected-engineers-list"></div>
@@ -1049,6 +1061,7 @@ const newEngineerNameInput = document.getElementById('newEngineerNameInput');
 const newEngineerInitialsInput = document.getElementById('newEngineerInitialsInput');
 const addNewEngineerBtn = document.getElementById('addNewEngineerBtn');
 const extraEngineersList = document.getElementById('extraEngineersList');
+const possibleCoversInput = document.getElementById('possibleCoversInput');
   const liveDateTime = document.getElementById('liveDateTime');
   const togglePastWeeksBtn = document.getElementById('togglePastWeeksBtn');
   const cellExtraEngineersList = document.getElementById('cellExtraEngineersList');
@@ -1571,25 +1584,9 @@ updateCellRedButton();
 
 cellModal.style.display = 'flex';
 
-/* ===== Auto focus fix for cell text input ===== */
-setTimeout(() => {
-  const txt = document.getElementById('cellTextInput');
-  if (txt) {
-    txt.removeAttribute('readonly');
-    txt.removeAttribute('disabled');
-
-    const forceFocus = () => {
-      txt.focus();
-      txt.click();
-      const end = txt.value.length;
-      try { txt.setSelectionRange(end, end); } catch(e){}
-    };
-
-    setTimeout(forceFocus, 50);
-    txt.addEventListener('touchstart', forceFocus, { passive:true });
-    txt.addEventListener('click', forceFocus);
-  }
-}, 50);
+requestAnimationFrame(() => {
+  cellTextInput?.focus();
+});
 
     };
   });
@@ -1817,6 +1814,10 @@ el.onclick = () => {
 newEngineerNameInput.disabled = !isAdmin();
 newEngineerInitialsInput.disabled = !isAdmin();
 addNewEngineerBtn.style.display = isAdmin() ? "inline-block" : "none";
+if (possibleCoversInput) {
+  possibleCoversInput.value = possibleCovers || "";
+  possibleCoversInput.disabled = !isAdmin();
+}
 renderExtraEngineersList();
   }
 
@@ -1826,6 +1827,13 @@ renderExtraEngineersList();
     editorView.style.display='block';
     renderEditor();
   };
+  if (possibleCoversInput) {
+    possibleCoversInput.addEventListener('input', async () => {
+      possibleCovers = possibleCoversInput.value || "";
+      await savePlannerState();
+    });
+  }
+
   addNewEngineerBtn.onclick = async () => {
   const name = (newEngineerNameInput.value || "").trim();
   const initials = (newEngineerInitialsInput.value || "").trim();
@@ -1948,7 +1956,7 @@ cellAddEngineerBtn.onclick = () => {
     const week = +activeCellKey.split('-')[0];
     const base = getTemplateForWeek(activeCellCode, week);
 
-    const manualBaseText = normalizeShiftText(cellTextInput.value || "");
+    const manualBaseText = cellTextInput.value || "";
     const baseMembers = extractInitialsFromText(manualBaseText);
     const combinedText = buildCombinedShiftText(manualBaseText, activeCellExtraMembers);
 
