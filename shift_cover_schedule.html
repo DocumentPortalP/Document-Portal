@@ -569,14 +569,6 @@ label.radio{display:block;margin:8px 0}
   }
 }
 
-
-#cellTextInput{
-  -webkit-user-select:text;
-  user-select:text;
-  pointer-events:auto;
-  touch-action:manipulation;
-}
-
 </style>
 </head>
 <body>
@@ -712,7 +704,7 @@ label.radio{display:block;margin:8px 0}
     <input id="cellTitleInput" placeholder="Shift title">
 
 <div class="small" style="margin-bottom:8px;">Current shift engineers</div>
-<textarea id="cellTextInput" rows="4" placeholder="Example: JM / CQ&#10;FD / AJ"></textarea>
+<textarea id="cellTextInput" rows="4" placeholder="Example: JM / CQ&#10;FD / AJ"></textarea>\n<div class="small" style="margin-top:-6px;margin-bottom:12px;">You can manually type any initials here.</div>
 
     <div class="small" style="margin:12px 0 8px;">Extra shift engineers</div>
     <div id="cellExtraEngineersList" class="selected-engineers-list"></div>
@@ -1350,24 +1342,9 @@ function openTemplateEditorForShift(code, shiftData) {
     startLiveDateTime();
   }
 function formatShiftTextWithExtras(shift) {
-  const base = Array.isArray(shift.members) ? shift.members : extractInitialsFromText(shift.text || "");
   const extras = Array.isArray(shift.extraMembers) ? shift.extraMembers : [];
-
-  const combined = [...base, ...extras];
-
-  const lines = [];
-  for (let i = 0; i < combined.length; i += 2) {
-    const pair = combined.slice(i, i + 2).map(initials => {
-      if (extras.includes(initials)) {
-        return `<strong>${initials}</strong>`;
-      }
-      return initials;
-    });
-
-    lines.push(pair.join(' / '));
-  }
-
-  return lines.join('<br>');
+  const baseText = shift.baseText ?? removeExtraMembersFromText(shift.text || "", extras);
+  return formatManualShiftText(baseText, extras);
 }
   function renderWeekTable(weekNumber, days){
     const pattern = weekPattern(weekNumber);
@@ -1441,6 +1418,65 @@ function buildCombinedShiftText(baseText, extraMembers) {
   if (!normalizedBase) return extraText;
   return `${normalizedBase}\n${extraText}`;
 }
+
+function removeExtraMembersFromText(text, extraMembers) {
+  let lines = (text || "")
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (!extraMembers || !extraMembers.length) {
+    return lines.join('\n');
+  }
+
+  const extras = [...extraMembers];
+  const cleaned = [];
+
+  lines.forEach(line => {
+    const parts = line.split('/').map(x => x.trim()).filter(Boolean);
+    const kept = [];
+
+    parts.forEach(part => {
+      const idx = extras.indexOf(part);
+      if (idx >= 0) {
+        extras.splice(idx, 1);
+      } else {
+        kept.push(part);
+      }
+    });
+
+    if (kept.length) cleaned.push(kept.join(' / '));
+  });
+
+  return cleaned.join('\n');
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatManualShiftText(baseText, extraMembers) {
+  const lines = (baseText || "")
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const htmlLines = lines.map(line => escapeHtml(line).replace(/\s*\/\s*/g, ' / '));
+
+  if (extraMembers && extraMembers.length) {
+    for (let i = 0; i < extraMembers.length; i += 2) {
+      const pair = extraMembers.slice(i, i + 2).map(initials => `<strong>${escapeHtml(initials)}</strong>`);
+      htmlLines.push(pair.join(' / '));
+    }
+  }
+
+  return htmlLines.join('<br>');
+}
 function bindClicks(){
   document.querySelectorAll('.shift[data-week]').forEach(el => {
     el.onclick = () => {
@@ -1459,24 +1495,37 @@ function bindClicks(){
 
       cellTitleInput.value = current.title;
 
-const baseMembers = getCellBaseMembers(activeCellCode, current, weekNumber);
-cellTextInput.value = buildTextFromMembers(baseMembers);
-
 activeCellExtraMembers = getCellExtraMembers(current);
+const baseMembers = getCellBaseMembers(activeCellCode, current, weekNumber);
+const baseTextForEditor = current.baseText ?? removeExtraMembersFromText(current.text || "", activeCellExtraMembers);
+cellTextInput.value = baseTextForEditor || buildTextFromMembers(baseMembers);
 activeCellIsRed = !!current.isRed;
 
 renderCellExtraEngineers();
 renderCellAddEngineerOptions();
 updateCellRedButton();
 
-
 cellModal.style.display = 'flex';
 
-requestAnimationFrame(() => {
-  cellTextInput?.focus();
-});
+/* ===== Auto focus fix for cell text input ===== */
+setTimeout(() => {
+  const txt = document.getElementById('cellTextInput');
+  if (txt) {
+    txt.removeAttribute('readonly');
+    txt.removeAttribute('disabled');
 
+    const forceFocus = () => {
+      txt.focus();
+      txt.click();
+      const end = txt.value.length;
+      try { txt.setSelectionRange(end, end); } catch(e){}
+    };
 
+    setTimeout(forceFocus, 50);
+    txt.addEventListener('touchstart', forceFocus, { passive:true });
+    txt.addEventListener('click', forceFocus);
+  }
+}, 50);
 
     };
   });
@@ -1842,6 +1891,7 @@ cellAddEngineerBtn.onclick = () => {
     cellOverrides[activeCellKey] = {
       title: cellTitleInput.value,
       text: combinedText,
+      baseText: manualBaseText,
       members: [...baseMembers],
       extraMembers: [...activeCellExtraMembers],
       color: base.color,
