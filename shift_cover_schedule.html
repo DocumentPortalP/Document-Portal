@@ -37,8 +37,8 @@
 }
 
 .day-type-btn.defrost-site2.active{
-  background:#0ea5a4;
-  border-color:#0ea5a4;
+  background:#7c3aed;
+  border-color:#7c3aed;
 }
 html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1f2937}
@@ -47,7 +47,7 @@ h1,h2,h3{margin:0}
 button{padding:10px 16px;border:none;border-radius:12px;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer}
 button.secondary{background:#e5e7eb;color:#111827}
 .tables{display:grid;gap:24px}
-.table-card,.editor{background:#fff;border:1px solid #dbe2ea;border-radius:24px;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.08);-webkit-overflow-scrolling:touch}
+.table-card,.editor{background:#fff;border:1px solid #dbe2ea;border-radius:24px;overflow-x:auto;overflow-y:visible;box-shadow:0 12px 30px rgba(0,0,0,.08);-webkit-overflow-scrolling:touch}
 .editor{display:none;padding:24px}
 
 /* NORMAL GRID = with notes */
@@ -77,14 +77,24 @@ button.secondary{background:#e5e7eb;color:#111827}
 .shift-b{background:#f2e7d8}
 .shift-c{background:#e3efd9}
 .shift-d{background:#f3e6c8}
-.shift-red{
+.shift-status-admin{
   background:#fecaca !important;
   border:1px solid #dc2626 !important;
   box-shadow:0 5px 14px rgba(220,38,38,.18) !important;
 }
-.shift-red .shift-title,
-.shift-red .shift-text{
+.shift-status-admin .shift-title,
+.shift-status-admin .shift-text{
   color:#7f1d1d;
+}
+
+.shift-status-engineer{
+  background:#bbf7d0 !important;
+  border:1px solid #16a34a !important;
+  box-shadow:0 5px 14px rgba(22,163,74,.18) !important;
+}
+.shift-status-engineer .shift-title,
+.shift-status-engineer .shift-text{
+  color:#14532d;
 }
 
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:20px}
@@ -94,7 +104,9 @@ button.secondary{background:#e5e7eb;color:#111827}
 .notes-cell{background:#f8fafc;cursor:pointer;grid-row:span 4;display:flex;align-items:flex-start}
 .notes-box{font-size:13px;line-height:1.35;color:#334155;white-space:pre-line;overflow:hidden;display:-webkit-box;-webkit-line-clamp:12;-webkit-box-orient:vertical;max-height:220px;width:100%}
 .header-cell.day-selectable{cursor:pointer}
-.header-cell.day-selectable.defrost{background:linear-gradient(180deg,#bfe7fb,#8ed1f7);color:#0f172a}
+.header-cell.day-selectable.defrost-site1{background:linear-gradient(180deg,#bfe7fb,#8ed1f7);color:#0f172a}
+.header-cell.day-selectable.defrost-site2{background:linear-gradient(180deg,#ddd6fe,#a78bfa);color:#1e1b4b}
+.header-cell.day-selectable.defrost-both{background:linear-gradient(135deg,#8ed1f7 0%,#8ed1f7 48%,#a78bfa 52%,#a78bfa 100%);color:#0f172a}
 .day-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .day-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.78);font-size:11px;font-weight:700;line-height:1.1;box-shadow:0 1px 4px rgba(15,23,42,.08)}
 #modal,#applyModal,#cellModal,#dayModal,#notesModal,#overtimeModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:20px;z-index:50;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -112,9 +124,11 @@ label.radio{display:block;margin:8px 0}
   flex-wrap:wrap;
   position:sticky;
   top:0;
-  z-index:30;
+  z-index:1000;
   background:#f4f7fb;
-  padding:10px 0;
+  padding:12px 0;
+  border-bottom:1px solid #dbe2ea;
+  box-shadow:0 10px 24px rgba(15,23,42,.08);
 }
 
 #editorLayout{
@@ -178,9 +192,43 @@ label.radio{display:block;margin:8px 0}
   white-space:nowrap;
 }
 
+.cover-legend{
+  display:none;
+  align-items:center;
+  gap:10px;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+  color:#064e3b;
+  background:linear-gradient(180deg,#ecfdf5,#d1fae5);
+  border:1px solid #6ee7b7;
+  border-radius:999px;
+  padding:9px 14px;
+  white-space:nowrap;
+  box-shadow:0 8px 18px rgba(16,185,129,.16);
+}
+
+.cover-legend-dot{
+  width:16px;
+  height:16px;
+  border-radius:5px;
+  background:#22c55e;
+  border:2px solid #15803d;
+  flex:0 0 auto;
+  box-shadow:0 0 0 3px rgba(34,197,94,.18);
+}
+
 .red-toggle-active{
-  background:#dc2626 !important;
   color:#fff !important;
+}
+
+.red-toggle-admin{
+  background:#dc2626 !important;
+}
+
+.red-toggle-engineer{
+  background:#16a34a !important;
 }
 
 /* ===== Mobile improvements ===== */
@@ -324,6 +372,11 @@ label.radio{display:block;margin:8px 0}
     width:100%;
     text-align:center;
     font-size:13px;
+  }
+
+  .cover-legend{
+    justify-content:center;
+    width:100%;
   }
 }
 
@@ -569,6 +622,56 @@ label.radio{display:block;margin:8px 0}
   }
 }
 
+
+
+/* ===== Fixed scrolling header fix ===== */
+:root{
+  --schedule-header-height: 96px;
+}
+
+#scheduleView{
+  padding-top: var(--schedule-header-height);
+}
+
+#scheduleView > .header{
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 5000 !important;
+  margin: 0 !important;
+  padding: 10px 24px !important;
+  box-sizing: border-box;
+  background: rgba(244,247,251,.96) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #dbe2ea;
+  box-shadow: 0 10px 24px rgba(15,23,42,.10);
+}
+
+#editorView > .header{
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+}
+
+.cover-legend{
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  font-weight: 900;
+}
+
+@media (max-width: 900px){
+  #scheduleView > .header{
+    padding: 10px 14px 12px !important;
+  }
+}
+
+@media (max-width: 600px){
+  #scheduleView > .header{
+    padding: 10px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -583,6 +686,7 @@ label.radio{display:block;margin:8px 0}
     <div class="header">
       <div class="header-top">
         <h1>Shift Planner</h1>
+        <div id="coverLegend" class="cover-legend"><span class="cover-legend-dot"></span>AVAILABLE FOR COVER</div>
         <div id="liveDateTime" class="live-datetime" style="display:none;"></div>
       </div>
 
@@ -727,7 +831,7 @@ Call agency if needed"></textarea>
     </div>
 
     <button type="button" id="cellRedToggleBtn" class="secondary" style="width:100%;margin-bottom:12px;">
-      Mark Red
+      Toggle Status
     </button>
 
     <div class="actions">
@@ -1063,6 +1167,7 @@ const addNewEngineerBtn = document.getElementById('addNewEngineerBtn');
 const extraEngineersList = document.getElementById('extraEngineersList');
 const possibleCoversInput = document.getElementById('possibleCoversInput');
   const liveDateTime = document.getElementById('liveDateTime');
+  const coverLegend = document.getElementById('coverLegend');
   const togglePastWeeksBtn = document.getElementById('togglePastWeeksBtn');
   const cellExtraEngineersList = document.getElementById('cellExtraEngineersList');
   const overtimeBtn = document.getElementById('overtimeBtn');
@@ -1071,6 +1176,16 @@ const overtimeMonthSelect = document.getElementById('overtimeMonthSelect');
 const overtimeSummaryWrap = document.getElementById('overtimeSummaryWrap');
 const closeOvertimeBtn = document.getElementById('closeOvertimeBtn');
   const cellTextInput = document.getElementById('cellTextInput');
+
+  function updateStickyHeaderOffset(){
+    const header = document.querySelector('#scheduleView > .header');
+    if (!header) return;
+    const height = Math.ceil(header.getBoundingClientRect().height + 18);
+    document.documentElement.style.setProperty('--schedule-header-height', height + 'px');
+  }
+
+  window.addEventListener('resize', updateStickyHeaderOffset);
+
 
   applyWeekInput.innerHTML = "";
   Object.keys(weeks).forEach(w => {
@@ -1093,7 +1208,7 @@ let activeCellMembers = [];
 let isApplyingRemote = false;
 let unsubscribePlanner = null;
   let activeCellExtraMembers = [];
-  let activeDayType = 'normal';
+  let activeDayTypes = ['normal'];
 
   function weekPattern(week){
     const phase = (week - 14) % 4;
@@ -1338,12 +1453,18 @@ function openTemplateEditorForShift(code, shiftData) {
   function updateCellRedButton(){
     if (!cellRedToggleBtn) return;
 
+    cellRedToggleBtn.classList.remove("red-toggle-active", "red-toggle-admin", "red-toggle-engineer");
+
     if (activeCellIsRed) {
-      cellRedToggleBtn.textContent = "Marked Red";
-      cellRedToggleBtn.classList.add("red-toggle-active");
+      if (isAdmin()) {
+        cellRedToggleBtn.textContent = "Marked Red";
+        cellRedToggleBtn.classList.add("red-toggle-active", "red-toggle-admin");
+      } else {
+        cellRedToggleBtn.textContent = "Marked Available";
+        cellRedToggleBtn.classList.add("red-toggle-active", "red-toggle-engineer");
+      }
     } else {
-      cellRedToggleBtn.textContent = "Mark Red";
-      cellRedToggleBtn.classList.remove("red-toggle-active");
+      cellRedToggleBtn.textContent = isAdmin() ? "Mark Red" : "Mark Available";
     }
   }
 
@@ -1430,7 +1551,10 @@ function openTemplateEditorForShift(code, shiftData) {
 
   function updatePermissions(){
     editTemplatesBtn.style.display = isAdmin() ? "inline-block" : "none";
+    if (overtimeBtn) overtimeBtn.style.display = isAdmin() ? "inline-block" : "none";
+    if (coverLegend) coverLegend.style.display = isEngineer() ? "inline-flex" : "none";
     startLiveDateTime();
+    requestAnimationFrame(updateStickyHeaderOffset);
   }
 function formatShiftTextWithExtras(shift) {
   const extras = Array.isArray(shift.extraMembers) ? shift.extraMembers : [];
@@ -1441,14 +1565,18 @@ function formatShiftTextWithExtras(shift) {
     const pattern = weekPattern(weekNumber);
     const showNotes = isAdmin();
 
-    let html = `<div class="table-card"><div class="${showNotes ? 'grid' : 'grid-no-notes'}">`;
+    let html = `<div class="table-card" data-week-card="${weekNumber}"><div class="${showNotes ? 'grid' : 'grid-no-notes'}">`;
     html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
 
     days.forEach((day, dayIndex) => {
-      const type = (dayTypes[weekNumber] && dayTypes[weekNumber][dayIndex]) ? dayTypes[weekNumber][dayIndex] : 'normal';
-      const defrost = type !== 'normal';
-      const extra = type === 'site1' ? 'Site 1 Defrost' : type === 'site2' ? 'Site 2 Defrost' : '';
-      html += `<div class="cell header-cell day-selectable ${defrost ? 'defrost' : ''}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${extra ? `<div class="day-badge">${extra}</div>` : ''}</div></div>`;
+      const types = normalizeDayTypes((dayTypes[weekNumber] && dayTypes[weekNumber][dayIndex]) ? dayTypes[weekNumber][dayIndex] : 'normal');
+      const hasSite1 = types.includes('site1');
+      const hasSite2 = types.includes('site2');
+      const defrostClass = hasSite1 && hasSite2 ? 'defrost-both' : hasSite1 ? 'defrost-site1' : hasSite2 ? 'defrost-site2' : '';
+      const badges = [];
+      if (hasSite1) badges.push('Site 1 Defrost');
+      if (hasSite2) badges.push('Site 2 Defrost');
+      html += `<div class="cell header-cell day-selectable ${defrostClass}" data-day-week="${weekNumber}" data-day-index="${dayIndex}"><div class="day-wrap"><div>${day}</div>${badges.map(label => `<div class="day-badge">${label}</div>`).join('')}</div></div>`;
     });
 
     if (showNotes) {
@@ -1463,7 +1591,7 @@ function formatShiftTextWithExtras(shift) {
           html += `<div class="cell empty"></div>`;
         } else {
           const shift = getCellData(weekNumber, rowIndex, colIndex, code);
-          html += `<div class="cell"><div class="shift ${shift.color} ${shift.isRed ? 'shift-red' : ''}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${formatShiftTextWithExtras(shift)}</div></div></div>`;
+          html += `<div class="cell"><div class="shift ${shift.color} ${shift.isRed ? (isAdmin() ? 'shift-status-admin' : 'shift-status-engineer') : ''}" data-week="${weekNumber}" data-row="${rowIndex}" data-col="${colIndex}" data-code="${code}"><div class="shift-title">${shift.title}</div><div class="shift-text">${formatShiftTextWithExtras(shift)}</div></div></div>`;
         }
       });
 
@@ -1476,14 +1604,34 @@ function formatShiftTextWithExtras(shift) {
     html += `</div></div>`;
     return html;
   }
+function normalizeDayTypes(value) {
+  if (Array.isArray(value)) {
+    const cleaned = value.filter(type => type === 'site1' || type === 'site2');
+    return cleaned.length ? [...new Set(cleaned)] : ['normal'];
+  }
+
+  if (value === 'site1' || value === 'site2') return [value];
+  if (value === 'both') return ['site1', 'site2'];
+  return ['normal'];
+}
+
+function hasActiveDayType(type) {
+  return normalizeDayTypes(activeDayTypes).includes(type);
+}
+
 function updateDayTypeButtons() {
+  const selected = normalizeDayTypes(activeDayTypes);
+
   document.querySelectorAll('.day-type-btn').forEach(btn => {
     const value = btn.dataset.dayType;
     btn.classList.remove('active', 'defrost-site1', 'defrost-site2');
 
-    if (value === activeDayType) {
-      btn.classList.add('active');
+    const isActive = value === 'normal'
+      ? selected.includes('normal')
+      : selected.includes(value);
 
+    if (isActive) {
+      btn.classList.add('active');
       if (value === 'site1') btn.classList.add('defrost-site1');
       if (value === 'site2') btn.classList.add('defrost-site2');
     }
@@ -1616,7 +1764,7 @@ requestAnimationFrame(() => {
       dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
 
       const current = dayTypes[activeDayWeek][activeDayIndex];
-activeDayType = current || 'normal';
+activeDayTypes = normalizeDayTypes(current);
 updateDayTypeButtons();
 
 dayModal.style.display = 'flex';
@@ -1784,6 +1932,7 @@ function renderSchedule(keepScrollPosition = false){
   togglePastWeeksBtn.textContent = showPastWeeks ? "Hide Previous Weeks" : "Show Previous Weeks";
 }
   bindClicks();
+  requestAnimationFrame(updateStickyHeaderOffset);
 
   if (keepScrollPosition) {
     requestAnimationFrame(() => {
@@ -1931,7 +2080,8 @@ renderExtraEngineersList();
     if (!Array.isArray(dayTypes[activeDayWeek])) {
       dayTypes[activeDayWeek] = Array(7).fill('normal');
     }
-    dayTypes[activeDayWeek][activeDayIndex] = activeDayType || 'normal';
+    const selected = normalizeDayTypes(activeDayTypes);
+    dayTypes[activeDayWeek][activeDayIndex] = selected.length === 1 ? selected[0] : selected;
   }
 
   dayModal.style.display = 'none';
@@ -1994,9 +2144,59 @@ cellAddEngineerBtn.onclick = () => {
   renderSchedule();
   await savePlannerState();
 };
+  function getScheduleHeaderHeight(){
+  const header = document.querySelector('#scheduleView > .header');
+  return header ? Math.ceil(header.getBoundingClientRect().height + 18) : 120;
+}
+
+function getWeekCardTop(weekNumber){
+  const card = document.querySelector(`[data-week-card="${weekNumber}"]`);
+  if (!card) return null;
+  return window.scrollY + card.getBoundingClientRect().top;
+}
+
+function scrollToWeek(weekNumber){
+  requestAnimationFrame(() => {
+    const top = getWeekCardTop(weekNumber);
+    if (top === null) return;
+    window.scrollTo({
+      top: Math.max(0, top - getScheduleHeaderHeight()),
+      behavior: 'auto'
+    });
+  });
+}
+
+function getCurrentVisibleWeek(){
+  const headerBottom = getScheduleHeaderHeight() + 6;
+  const cards = [...document.querySelectorAll('[data-week-card]')];
+
+  for (const card of cards) {
+    const rect = card.getBoundingClientRect();
+
+    if (rect.bottom > headerBottom) {
+      return Number(card.dataset.weekCard);
+    }
+  }
+
+  return null;
+}
+
   togglePastWeeksBtn.onclick = () => {
+  const wasShowingPastWeeks = showPastWeeks;
+  const anchorWeek = getCurrentVisibleWeek();
+
   showPastWeeks = !showPastWeeks;
-  renderSchedule(true);
+  renderSchedule(false);
+
+  if (wasShowingPastWeeks && !showPastWeeks) {
+    const targetWeek = anchorWeek && anchorWeek < 18 ? 18 : anchorWeek;
+    if (targetWeek) scrollToWeek(targetWeek);
+    return;
+  }
+
+  if (!wasShowingPastWeeks && showPastWeeks && anchorWeek) {
+    scrollToWeek(anchorWeek);
+  }
 };
 overtimeBtn.onclick = () => {
   populateOvertimeMonths();
@@ -2022,7 +2222,24 @@ closeOvertimeBtn.onclick = () => {
 };
   document.querySelectorAll('.day-type-btn').forEach(btn => {
   btn.onclick = () => {
-    activeDayType = btn.dataset.dayType;
+    const selected = normalizeDayTypes(activeDayTypes);
+    const value = btn.dataset.dayType;
+
+    if (value === 'normal') {
+      activeDayTypes = ['normal'];
+    } else {
+      const defrosts = selected.filter(type => type === 'site1' || type === 'site2');
+      if (defrosts.includes(value)) {
+        activeDayTypes = defrosts.filter(type => type !== value);
+      } else {
+        activeDayTypes = [...defrosts, value];
+      }
+
+      if (!activeDayTypes.length) {
+        activeDayTypes = ['normal'];
+      }
+    }
+
     updateDayTypeButtons();
   };
 });
@@ -2036,6 +2253,7 @@ closeOvertimeBtn.onclick = () => {
   if (cellTextInput) { cellTextInput.addEventListener('input', () => { renderCellAddEngineerOptions(); }); }
   renderSchedule();
   updatePermissions();
+  requestAnimationFrame(updateStickyHeaderOffset);
   bindActivityListeners();
 
   if (sessionStorage.getItem("shiftRole")) {
@@ -2069,6 +2287,11 @@ closeOvertimeBtn.onclick = () => {
   });
 }
  
+  
+</script>
+</body>
+</html>
+
   
 </script>
 </body>
