@@ -662,13 +662,65 @@ label.radio{display:block;margin:8px 0}
 
 @media (max-width: 900px){
   #scheduleView > .header{
-    padding: 10px 14px 12px !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+    margin-bottom: 14px !important;
+    padding: 10px 0 12px !important;
+    background:#f4f7fb !important;
+    backdrop-filter:none !important;
+    box-shadow:none !important;
+  }
+
+  #editorView > .header{
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    box-shadow:none !important;
+  }
+
+  #scheduleView{
+    padding-top: 0 !important;
+  }
+
+  #modal,
+  #applyModal,
+  #cellModal,
+  #dayModal,
+  #notesModal,
+  #overtimeModal{
+    z-index: 20000 !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:10px !important;
+  }
+
+  .modal-box{
+    margin:0 !important;
+    max-height:calc(100dvh - 20px) !important;
   }
 }
 
 @media (max-width: 600px){
   #scheduleView > .header{
-    padding: 10px !important;
+    padding: 10px 0 12px !important;
+  }
+
+  #modal,
+  #applyModal,
+  #cellModal,
+  #dayModal,
+  #notesModal,
+  #overtimeModal{
+    padding:8px !important;
+  }
+
+  .modal-box{
+    width:100% !important;
+    max-height:calc(100dvh - 16px) !important;
+    border-radius:14px !important;
   }
 }
 
@@ -1180,6 +1232,12 @@ const closeOvertimeBtn = document.getElementById('closeOvertimeBtn');
   function updateStickyHeaderOffset(){
     const header = document.querySelector('#scheduleView > .header');
     if (!header) return;
+
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      document.documentElement.style.setProperty('--schedule-header-height', '0px');
+      return;
+    }
+
     const height = Math.ceil(header.getBoundingClientRect().height + 18);
     document.documentElement.style.setProperty('--schedule-header-height', height + 'px');
   }
@@ -2287,11 +2345,6 @@ closeOvertimeBtn.onclick = () => {
   });
 }
  
-  
-</script>
-</body>
-</html>
-
   
 </script>
 </body>
