@@ -906,8 +906,13 @@ Call agency if needed"></textarea>
   </div>
 </div>
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  let db = null;
+  let fbDoc = null;
+  let fbSetDoc = null;
+  let fbOnSnapshot = null;
+  let firebaseReadyPromise = null;
+  let firebaseAvailable = false;
+  let firebaseLastError = null;
 
   const firebaseConfig = {
     apiKey: "AIzaSyCenPiFOZwK-MvaU4gXF5WUTmo6FKCrvvU",
@@ -919,8 +924,33 @@ Call agency if needed"></textarea>
     measurementId: "G-13H1P0K1XD"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  async function initFirebase() {
+    if (firebaseReadyPromise) return firebaseReadyPromise;
+
+    firebaseReadyPromise = (async () => {
+      try {
+        const appModule = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+        const firestoreModule = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+
+        const app = appModule.initializeApp(firebaseConfig);
+        db = firestoreModule.getFirestore(app);
+        fbDoc = firestoreModule.doc;
+        fbSetDoc = firestoreModule.setDoc;
+        fbOnSnapshot = firestoreModule.onSnapshot;
+        firebaseAvailable = true;
+        firebaseLastError = null;
+        console.log("Firebase connected");
+      } catch (err) {
+        firebaseAvailable = false;
+        firebaseLastError = err;
+        console.error("Firebase could not be loaded. App will continue in local/offline mode.", err);
+      }
+
+      return firebaseAvailable;
+    })();
+
+    return firebaseReadyPromise;
+  }
 
   const ROLE_PINS = { "0000": "engineer", "Eng2022": "admin" };
 
@@ -1555,11 +1585,25 @@ function openTemplateEditorForShift(code, shiftData) {
 
   async function savePlannerState(){
     if (!isAdmin() || isApplyingRemote) return;
+
     try {
-      await setDoc(doc(db, "shiftPlanner", "main"), getPlannerState());
+      localStorage.setItem("shiftPlannerLocalBackup", JSON.stringify(getPlannerState()));
+    } catch (localErr) {
+      console.warn("Local backup save failed", localErr);
+    }
+
+    await initFirebase();
+
+    if (!firebaseAvailable || !db || !fbDoc || !fbSetDoc) {
+      console.warn("Firebase is not available, changes are saved only as local backup.", firebaseLastError);
+      return;
+    }
+
+    try {
+      await fbSetDoc(fbDoc(db, "shiftPlanner", "main"), getPlannerState());
       console.log("Planner state saved");
     } catch (err) {
-      console.error("Planner save failed", err);
+      console.error("Planner save failed. Local backup is still kept.", err);
     }
   }
 
@@ -1594,17 +1638,46 @@ function openTemplateEditorForShift(code, shiftData) {
     isApplyingRemote = false;
   }
 
-  function startRealtimeSync(){
+  async function startRealtimeSync(){
     if (unsubscribePlanner) return;
-    unsubscribePlanner = onSnapshot(doc(db, "shiftPlanner", "main"), async (snap) => {
-      if (!snap.exists()) {
-        if (isAdmin()) {
-          await setDoc(doc(db, "shiftPlanner", "main"), getPlannerState());
-        }
-        return;
+
+    try {
+      const localBackup = localStorage.getItem("shiftPlannerLocalBackup");
+      if (localBackup) {
+        applyPlannerState(JSON.parse(localBackup));
       }
-      applyPlannerState(snap.data());
-    });
+    } catch (localErr) {
+      console.warn("Could not load local planner backup", localErr);
+    }
+
+    await initFirebase();
+
+    if (!firebaseAvailable || !db || !fbDoc || !fbOnSnapshot) {
+      console.warn("Firebase realtime sync unavailable. Admin login still works in local/offline mode.", firebaseLastError);
+      return;
+    }
+
+    try {
+      unsubscribePlanner = fbOnSnapshot(
+        fbDoc(db, "shiftPlanner", "main"),
+        async (snap) => {
+          if (!snap.exists()) {
+            if (isAdmin() && fbSetDoc) {
+              await fbSetDoc(fbDoc(db, "shiftPlanner", "main"), getPlannerState());
+            }
+            return;
+          }
+          applyPlannerState(snap.data());
+        },
+        (err) => {
+          console.error("Firebase realtime sync failed. App will continue with local/default data.", err);
+          unsubscribePlanner = null;
+        }
+      );
+    } catch (err) {
+      unsubscribePlanner = null;
+      console.error("Firebase listener could not start. App will continue with local/default data.", err);
+    }
   }
 
   function updatePermissions(){
