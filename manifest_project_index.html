@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+  <title>Manifest Project Planner</title>
+
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #17202a;
+      --muted: #6b7280;
+      --border: #d9dee7;
+      --primary: #1f6feb;
+      --primary-dark: #174ea6;
+      --green: #16a34a;
+      --orange: #f59e0b;
+      --red: #dc2626;
+      --blue-soft: #eaf2ff;
+      --green-soft: #eaf8ef;
+      --orange-soft: #fff7e6;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body.locked {
+      overflow: hidden;
+    }
+
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: linear-gradient(135deg, #0f172a 0%, #1f6feb 55%, #eaf2ff 100%);
+    }
+
+    .login-screen.open {
+      display: flex;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 390px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 26px;
+      padding: 26px;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.35);
+      text-align: center;
+    }
+
+    .login-logo {
+      width: 62px;
+      height: 62px;
+      border-radius: 20px;
+      margin: 0 auto 14px;
+      display: grid;
+      place-items: center;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 900;
+      font-size: 22px;
+      box-shadow: 0 10px 25px rgba(31, 111, 235, 0.28);
+    }
+
+    .login-card h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.1;
+    }
+
+    .login-card p {
+      margin: 8px 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .login-card label {
+      text-align: left;
+      margin-bottom: 14px;
+    }
+
+    .login-main-btn {
+      width: 100%;
+      border: none;
+      border-radius: 15px;
+      background: var(--primary);
+      color: #fff;
+      padding: 13px 16px;
+      font-weight: 900;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(31, 111, 235, 0.28);
+    }
+
+    .login-hint {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 16px;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(244, 246, 248, 0.96);
+      backdrop-filter: blur(8px);
+      padding: 10px 0 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .title-block h1 {
+      font-size: 22px;
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    .title-block p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .home-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+
+    .day-tabs {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(74px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .day-tab {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 9px 8px;
+      cursor: pointer;
+      text-align: center;
+      min-width: 74px;
+      transition: 0.15s ease;
+    }
+
+    .day-tab strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .day-tab span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .day-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(31, 111, 235, 0.25);
+    }
+
+    .day-tab.active span {
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .summary-card span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .shift-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .shift-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      background: #fbfcfe;
+    }
+
+    .shift-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .shift-header small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-pill {
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: var(--blue-soft);
+      color: var(--primary-dark);
+      font-weight: 700;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .departments {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .department-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      min-height: 140px;
+    }
+
+    .department-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 12px;
+      font-weight: 800;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .department-title.engineering {
+      background: var(--blue-soft);
+      color: #164a8b;
+    }
+
+    .department-title.contractors {
+      background: var(--orange-soft);
+      color: #8a5600;
+    }
+
+    .department-title.hygiene {
+      background: var(--green-soft);
+      color: #116530;
+    }
+
+    .dept-count {
+      font-size: 12px;
+      font-weight: 800;
+      opacity: 0.85;
+    }
+
+    .task-list {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-item {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 10px;
+      background: #fff;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: flex-start;
+    }
+
+    .task-item.done {
+      background: #f3fbf5;
+      border-color: #b8e7c5;
+    }
+
+    .task-item input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      accent-color: var(--green);
+    }
+
+    .task-main strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+
+    .task-main p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .task-meta {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .comment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 999px;
+      padding: 4px 7px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .task-context-line {
+      margin-top: 7px;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .task-main {
+      cursor: pointer;
+    }
+
+    .comment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .comment-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: #f8fafc;
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .comment-item small {
+      display: block;
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 11px;
+    }
+
+    .task-detail-box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #f9fafb;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .task-detail-box strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .task-detail-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 7px;
+      background: #eef2f7;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 13px;
+      text-align: center;
+      background: #fafafa;
+    }
+
+    .floating-actions {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .fab {
+      border: none;
+      border-radius: 999px;
+      padding: 13px 16px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(31, 111, 235, 0.3);
+      cursor: pointer;
+    }
+
+    .fab.secondary {
+      background: #111827;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 560px;
+      background: #fff;
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+
+    .modal h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px;
+      font: inherit;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .sync-status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .role-bar {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .role-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .role-btn.danger {
+      color: var(--red);
+      border-color: #fecaca;
+      background: #fff5f5;
+    }
+
+    .delete-task-btn,
+    .delete-comment-btn {
+      border: 1px solid #fecaca;
+      background: #fff5f5;
+      color: var(--red);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .delete-task-btn {
+      margin-left: auto;
+    }
+
+    .comment-top-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .comment-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      .departments {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app {
+        padding: 10px;
+      }
+
+      header {
+        padding-top: 8px;
+      }
+
+      .top-bar {
+        align-items: flex-start;
+      }
+
+      .title-block h1 {
+        font-size: 19px;
+      }
+
+      .home-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .day-tabs {
+        grid-template-columns: repeat(9, 82px);
+        gap: 7px;
+      }
+
+      .shift-header {
+        padding: 10px 12px;
+      }
+
+      .shift-header h2 {
+        font-size: 17px;
+      }
+
+      .summary-card {
+        padding: 8px 5px;
+      }
+
+      .summary-card strong {
+        font-size: 17px;
+      }
+
+      .summary-card span {
+        font-size: 11px;
+      }
+
+      .floating-actions {
+        left: 10px;
+        right: 10px;
+      }
+
+      .fab {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">MP</div>
+      <h1>Manifest Project</h1>
+      <p>Production Line 1 Shutdown Planner</p>
+
+      <label>
+        Access password
+        <input id="mainLoginPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
+      </label>
+
+      <button class="login-main-btn" onclick="mainLogin()">Login</button>
+      <div class="login-hint" id="mainLoginHint">Session expires after 30 minutes.</div>
+    </div>
+  </div>
+
+  <div class="app" id="appRoot">
+    <header>
+      <div class="top-bar">
+        <div class="title-block">
+          <h1>Manifest Project Planner</h1>
+          <p>Production Line 1 shutdown · 31 May – 8 Jun</p>
+        </div>
+        <button class="home-btn" onclick="goHome()">Home</button>
+      </div>
+
+      <div class="day-tabs" id="dayTabs"></div>
+      <div class="sync-status" id="syncStatus">Loading planner...</div>
+          <div class="role-bar" id="roleBar">
+        <span id="roleLabel">Not logged in</span>
+        <button class="role-btn" onclick="openLoginModal()">Login</button>
+        <button class="role-btn danger" id="logoutBtn" onclick="logoutUser()" style="display:none;">Logout</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="summary-row">
+        <div class="summary-card">
+          <strong id="summaryTotal">0</strong>
+          <span>Total jobs</span>
+        </div>
+        <div class="summary-card">
+          <strong id="summaryDone">0</strong>
+          <span>Completed</span>
+        </div>
+        <div class="summary-card">
+          <strong id="summaryOpen">0</strong>
+          <span>Open</span>
+        </div>
+      </section>
+
+      <div id="shiftContainer"></div>
+    </main>
+  </div>
+
+  <div class="floating-actions">
+    <button class="fab secondary" onclick="expandAllCurrentDay()">Show all</button>
+    <button class="fab" onclick="openTaskModal()">+ Add job</button>
+  </div>
+
+  <div class="modal-backdrop" id="loginModalBackdrop" onclick="closeLoginModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Login</h3>
+      <div class="form-grid">
+        <label>
+          Access password
+          <input id="loginPassword" type="password" placeholder="Enter password" />
+        </label>
+        <p style="margin:0; color:var(--muted); font-size:13px; line-height:1.4;">
+          Admin can delete jobs and comments. Standard user can update job status and add/read comments.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeLoginModal()">Cancel</button>
+        <button class="btn primary" onclick="loginWithPassword()">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="taskModalBackdrop" onclick="closeTaskModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Add Manifest Job</h3>
+      <div class="form-grid">
+        <label>
+          Day
+          <select id="taskDay"></select>
+        </label>
+
+        <label>
+          Shift
+          <select id="taskShift">
+            <option value="day">Day Shift</option>
+            <option value="night">Night Shift</option>
+          </select>
+        </label>
+
+        <label>
+          Department
+          <select id="taskDepartment">
+            <option value="engineering">Engineering</option>
+            <option value="contractors">Contractors</option>
+            <option value="hygiene">Hygiene</option>
+          </select>
+        </label>
+
+        <label>
+          Job title
+          <input id="taskTitle" placeholder="Example: Inspect conveyor chain" />
+        </label>
+
+        <label>
+          Details / comment
+          <textarea id="taskDetails" placeholder="Add short instruction, WO number, safety note, contractor name, etc."></textarea>
+        </label>
+
+        <label>
+          Owner / team / WO number
+          <input id="taskOwner" placeholder="Example: WO12345 / Hygiene Team / Contractor name" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" onclick="closeTaskModal()">Cancel</button>
+        <button class="btn primary" onclick="saveNewTask()">Save job</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="editTaskModalBackdrop" onclick="closeEditTaskModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Edit Manifest Job</h3>
+      <div class="form-grid">
+        <label>
+          Day
+          <select id="editTaskDay"></select>
+        </label>
+
+        <label>
+          Shift
+          <select id="editTaskShift">
+            <option value="day">Day Shift</option>
+            <option value="night">Night Shift</option>
+          </select>
+        </label>
+
+        <label>
+          Department
+          <select id="editTaskDepartment">
+            <option value="engineering">Engineering</option>
+            <option value="contractors">Contractors</option>
+            <option value="hygiene">Hygiene</option>
+          </select>
+        </label>
+
+        <label>
+          Job title
+          <input id="editTaskTitle" />
+        </label>
+
+        <label>
+          Details
+          <textarea id="editTaskDetails"></textarea>
+        </label>
+
+        <label>
+          Responsible / owner
+          <input id="editTaskOwner" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" onclick="closeEditTaskModal()">Cancel</button>
+        <button class="btn primary" onclick="saveEditedTask()">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="jobDetailBackdrop" onclick="closeJobDetailModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3 id="jobDetailTitle">Job details</h3>
+
+      <div class="task-detail-box">
+        <strong id="jobDetailOwner"></strong>
+        <p id="jobDetailDetails"></p>
+      </div>
+
+      <label>
+        Add comment
+        <textarea id="jobCommentInput" placeholder="Write comment, update, issue found, waiting for parts, etc."></textarea>
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn" onclick="closeJobDetailModal()">Close</button>
+        <button class="btn primary" onclick="saveJobComment()">Add comment</button>
+      </div>
+
+      <h3 style="font-size:16px; margin-top:18px;">Comments</h3>
+      <div id="jobCommentsList" class="comment-list"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    /*
+      IMPORTANT:
+      This page uses a SEPARATE Firebase document/collection name:
+      manifestProject2026 / line1ShutdownWeek
+
+      It should NOT overwrite or touch your existing Shift Schedule data,
+      as long as your existing shift planner uses different collection/document names.
+    */
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getFirestore,
+      doc,
+      onSnapshot,
+      setDoc,
+      serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    // Firebase Web App config for Manifest Project
+    const firebaseConfig = {
+  apiKey: "AIzaSyDmja5RNvKMBEfXw39ph6qNQ0ShGeQSdDI",
+  authDomain: "manifest-394b9.firebaseapp.com",
+  databaseURL: "https://manifest-394b9-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "manifest-394b9",
+  storageBucket: "manifest-394b9.firebasestorage.app",
+  messagingSenderId: "912042761294",
+  appId: "1:912042761294:web:7e58f2d35fd5b34339371f",
+  measurementId: "G-LLV76S0HT1"
+};
+
+    const DAYS = [
+      { id: 'sun31', label: 'Sun', full: 'Sunday', date: '31 May' },
+      { id: 'mon', label: 'Mon', full: 'Monday', date: '1 Jun' },
+      { id: 'tue', label: 'Tue', full: 'Tuesday', date: '2 Jun' },
+      { id: 'wed', label: 'Wed', full: 'Wednesday', date: '3 Jun' },
+      { id: 'thu', label: 'Thu', full: 'Thursday', date: '4 Jun' },
+      { id: 'fri', label: 'Fri', full: 'Friday', date: '5 Jun' },
+      { id: 'sat', label: 'Sat', full: 'Saturday', date: '6 Jun' },
+      { id: 'sun', label: 'Sun', full: 'Sunday', date: '7 Jun' },
+      { id: 'mon8', label: 'Mon', full: 'Monday', date: '8 Jun' }
+    ];
+
+    const SHIFTS = [
+      { id: 'day', label: 'Day Shift', time: '12 hours' },
+      { id: 'night', label: 'Night Shift', time: '12 hours' }
+    ];
+
+    const DEPARTMENTS = [
+      { id: 'engineering', label: 'Engineering' },
+      { id: 'contractors', label: 'Contractors' },
+      { id: 'hygiene', label: 'Hygiene' }
+    ];
+
+    const HYGIENE_SEED_TASKS = {
+      sun31: {
+        day: [
+          {
+            id: 'hygiene_sun31_day_001',
+            title: 'Organise trolley for bin removal',
+            details: 'Sunday day 31.05.26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_day_002',
+            title: 'External power washer/mobile power washer from Hygiene',
+            details: 'Sunday day 31.05.26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_day_003',
+            title: 'Start removing and washing bins from Biga tunnel once biga is finished (11:30am on Sunday)',
+            details: 'Sunday day 31.05.26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T11:30:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_day_004',
+            title: '2 extra people required',
+            details: 'Sunday day 31.05.26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T06:00:00.000Z',
+            completedAt: null
+          }
+        ],
+        night: [
+          {
+            id: 'hygiene_sun31_night_001',
+            title: 'Keep removing and washing bins from Biga tunnel',
+            details: 'Sunday night 31.05.26 Declan shift',
+            owner: 'Declan shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_night_002',
+            title: 'Bins to be washed and covered with liners and stored in Old Prepack/S2/S1 oven/S2 biga',
+            details: 'Sunday night 31.05.26 Declan shift',
+            owner: 'Declan shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_night_003',
+            title: 'Bins to be marked (Dough/Biga)',
+            details: 'Sunday night 31.05.26 Declan shift',
+            owner: 'Declan shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_night_004',
+            title: '2 extra people required',
+            details: 'Sunday night 31.05.26 Declan shift',
+            owner: 'Declan shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_sun31_night_005',
+            title: 'Production finished at 7am Monday morning Fritsch (Mixing at 5:30am)',
+            details: 'Sunday night 31.05.26 Declan shift',
+            owner: 'Declan shift / Hygiene',
+            done: false,
+            createdAt: '2026-05-31T18:00:00.000Z',
+            completedAt: null
+          }
+        ]
+      },
+      mon: {
+        day: [
+          {
+            id: 'hygiene_mon_day_001',
+            title: 'Hugh to keep removing and washing biga/Dough bins',
+            details: 'Monday Morning 01.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_mon_day_002',
+            title: 'Hygiene team to start at 6am focusing on Standard defrost',
+            details: 'Monday Morning 01.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_mon_day_003',
+            title: 'Hugh to continue washing bins and support fermentation cleaning',
+            details: 'Monday Morning 01.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_mon_day_004',
+            title: 'Blue conveyors to be removed from VMI/Fermentation circuit, soaked in bins with chemical and rollers to be cleaned',
+            details: 'Monday Morning 01.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T06:00:00.000Z',
+            completedAt: null
+          }
+        ],
+        night: [
+          {
+            id: 'hygiene_mon_night_001',
+            title: 'Gary to continue washing bins and fermentation + VMI circuit',
+            details: 'Monday Night 01.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_mon_night_002',
+            title: 'All the guards around mixing to be removed and washed',
+            details: 'Monday Night 01.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_mon_night_003',
+            title: 'Fermentation needs to be cleaned by Tuesday morning!',
+            details: 'Monday Night 01.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-01T18:00:00.000Z',
+            completedAt: null
+          }
+        ]
+      },
+      tue: {
+        day: [
+          {
+            id: 'hygiene_tue_day_001',
+            title: 'Hygiene team to start at 6am focusing Mixing',
+            details: 'Tuesday Morning 02.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_day_002',
+            title: 'Hugh to continue washing bins + VMI circuit',
+            details: 'Tuesday Morning 02.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_day_003',
+            title: 'All the guards around mixing to be removed and washed',
+            details: 'Tuesday Morning 02.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_day_004',
+            title: 'Fritsch line cleaning',
+            details: 'Tuesday Morning 02.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_day_005',
+            title: 'Proover cleaning',
+            details: 'Tuesday Morning 02.06.26 Hugh shift',
+            owner: 'Hugh shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T06:00:00.000Z',
+            completedAt: null
+          }
+        ],
+        night: [
+          {
+            id: 'hygiene_tue_night_001',
+            title: 'Gary to continue washing bins + VMI circuit',
+            details: 'Tuesday Night 02.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_night_002',
+            title: 'All the guards around mixing to be removed and washed',
+            details: 'Tuesday Night 02.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_night_003',
+            title: 'Fritsch line cleaning',
+            details: 'Tuesday Night 02.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_tue_night_004',
+            title: 'Proover cleaning',
+            details: 'Tuesday Night 02.06.26 Gary shift',
+            owner: 'Gary shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-02T18:00:00.000Z',
+            completedAt: null
+          }
+        ]
+      },
+      wed: {
+        day: [
+          {
+            id: 'hygiene_wed_day_001',
+            title: 'Hygiene team to start at 6am focusing Guards + Fritsch/Biga hoist',
+            details: 'Wednesday Morning 03/06/26 Stanley shift',
+            owner: 'Stanley shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_day_002',
+            title: 'All blue belts to be washed and placed back in VMI/Fermentation circuit',
+            details: 'Wednesday Morning 03/06/26 Stanley shift',
+            owner: 'Stanley shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_day_003',
+            title: 'Mixing cleaning',
+            details: 'Wednesday Morning 03/06/26 Stanley shift',
+            owner: 'Stanley shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_day_004',
+            title: 'Please note that all bins need to be back in fermentation before 6pm on Wednesday (possibly to be pushed out to Sunday)',
+            details: 'Wednesday Morning 03/06/26 Stanley shift',
+            owner: 'Stanley shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T06:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_day_005',
+            title: 'Fermentation circuit to be tested trough out the day by Mateo',
+            details: 'Wednesday Morning 03/06/26 Stanley shift',
+            owner: 'Stanley shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T06:00:00.000Z',
+            completedAt: null
+          }
+        ],
+        night: [
+          {
+            id: 'hygiene_wed_night_001',
+            title: 'Zdenko to continue cleaning Mixing area',
+            details: 'Wednesday Night 03/06/26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_night_002',
+            title: 'All bins back in fermentation?',
+            details: 'Wednesday Night 03/06/26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_night_003',
+            title: 'Zdenko to finish cleaning Prover',
+            details: 'Wednesday Night 03/06/26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_night_004',
+            title: 'Trunking for the wiring to be cleaned',
+            details: 'Wednesday Night 03/06/26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_night_005',
+            title: 'Packing/Oven cleaning',
+            details: 'Wednesday Night 03/06/26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T18:00:00.000Z',
+            completedAt: null
+          },
+          {
+            id: 'hygiene_wed_night_006',
+            title: 'Barmarker hood',
+            details: 'Wednesday Night 03/06/26 Zdenko shift',
+            owner: 'Zdenko shift / Hygiene',
+            done: false,
+            createdAt: '2026-06-03T18:00:00.000Z',
+            completedAt: null
+          }
+        ]
+      },
+      fri: {
+        day: [
+          {
+            id: 'hygiene_fri_day_001',
+            title: 'Plan for Hygiene to wash the walls in the Oven Friday?',
+            details: 'Additional note from Hygiene plan',
+            owner: 'Hygiene / TBC',
+            done: false,
+            createdAt: '2026-06-05T06:00:00.000Z',
+            completedAt: null
+          }
+        ],
+        night: []
+      },
+      sun: {
+        day: [
+          {
+            id: 'hygiene_sun_day_001',
+            title: 'Possibly bring them in on Sunday',
+            details: 'Additional note from Hygiene plan',
+            owner: 'Hygiene / TBC',
+            done: false,
+            createdAt: '2026-06-07T06:00:00.000Z',
+            completedAt: null
+          }
+        ],
+        night: []
+      }
+    };
+
+    const CONTRACTORS_SEED_TASKS = {
+      mon: {
+        day: [
+          { id: 'contractors_mon_day_001', title: 'Stop Production time tbc', details: 'Monday 1st June - Day Shift', owner: 'Responsible: TBC', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon_day_002', title: 'Remove Board Circuit Conveyors', details: 'Monday 1st June - Day Shift', owner: 'Panelto/Saccani', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon_day_003', title: 'Remove Electrical Cabling', details: 'Monday 1st June - Day Shift', owner: 'Panelto/Saccani', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon_day_004', title: 'Disconnect/Remove Conveyors for Retarder Access', details: 'Monday 1st June - Day Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon_day_005', title: 'Luca (Software) continues to work on Fermentation', details: 'Monday 1st June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon_day_006', title: 'Second Engineering Team Arrive on site', details: 'Monday 1st June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon_day_007', title: 'Jacopo/Silvo plus 2 more Engineers', details: 'Monday 1st June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_mon_night_001', title: 'Place Retarder Equipment in area of Retrader', details: 'Monday 1st June - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-01T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      tue: {
+        day: [
+          { id: 'contractors_tue_day_001', title: 'Remove Electrical Cabling', details: 'Tuesday 2nd June - Day Shift', owner: 'Panelto/Saccani', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_tue_day_002', title: 'Install New Bridge from Retractor @ Prover Infeed', details: 'Tuesday 2nd June - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_tue_day_003', title: 'Mechanical Install Fritsch 2 Retractor', details: 'Tuesday 2nd June - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_tue_day_004', title: 'Luca (Software) continues to work on Fermentation', details: 'Tuesday 2nd June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_tue_day_005', title: 'Matteo arrives on site', details: 'Tuesday 2nd June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_tue_night_001', title: 'Modify Chain lug Conveyor', details: 'Tuesday 2nd June - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-02T18:00:00.000Z', completedAt: null },
+          { id: 'contractors_tue_night_002', title: 'Modify Board Conveyor after destacker', details: 'Tuesday 2nd June - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-02T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      wed: {
+        day: [
+          { id: 'contractors_wed_day_001', title: 'Complete Aerial Loop Conveyor Install', details: 'Wednesday 3rd June - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_day_002', title: 'Electrical Part/Wiring on all', details: 'Wednesday 3rd June - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_day_003', title: 'Install Board Decender & Conveyors interlinks', details: 'Wednesday 3rd June - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_day_004', title: 'Electrical Part/Wiring on all', details: 'Wednesday 3rd June - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_day_005', title: 'Matteo Completes software on Fermentation', details: 'Wednesday 3rd June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_day_006', title: 'Luca begins I/O Testing Aerial Conveyors', details: 'Wednesday 3rd June - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_day_007', title: 'VMI on site (Mech)', details: 'Wednesday 3rd June - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_wed_night_001', title: 'Fit Cable Containment', details: 'Wednesday 3rd June - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-03T18:00:00.000Z', completedAt: null },
+          { id: 'contractors_wed_night_002', title: 'Start Electrical Cables in area', details: 'Wednesday 3rd June - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-03T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      thu: {
+        day: [
+          { id: 'contractors_thu_day_001', title: 'Electrical Part/Wiring on all', details: 'Thursday 4th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_day_002', title: 'Start Commissioning Bridge', details: 'Thursday 4th - Day Shift', owner: 'Matteo/Luca', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_day_003', title: 'Install AHU Platform Next Retrader', details: 'Thursday 4th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_day_004', title: 'Install Right Angle in Fermentation Loop', details: 'Thursday 4th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_day_005', title: 'Matteo works on Aerial Conveyor Softare', details: 'Thursday 4th - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_day_006', title: 'Luca continues I/O Testing Aerial Conveyors', details: 'Thursday 4th - Day Shift', owner: 'Saccani', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_day_007', title: 'VMI on site (Mech)', details: 'Thursday 4th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_thu_night_001', title: 'Continue Platform Next Retrader', details: 'Thursday 4th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-04T18:00:00.000Z', completedAt: null },
+          { id: 'contractors_thu_night_002', title: 'Install Aircon Unit on platform', details: 'Thursday 4th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-04T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      fri: {
+        day: [
+          { id: 'contractors_fri_day_001', title: 'Start Operation of Bridge', details: 'Friday 5th - Day Shift', owner: 'Matteo/Luca', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_day_002', title: 'Install Right angle in Fermentation Bin Circuit', details: 'Friday 5th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_day_003', title: 'Install Board Assender & Conveyors interlinks', details: 'Friday 5th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_day_004', title: 'Electrical Part/Wiring on all', details: 'Friday 5th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_day_005', title: 'Start Commissioning Next Part', details: 'Friday 5th - Day Shift', owner: 'Matteo/Luca', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_day_006', title: 'VMI on site (Mech)', details: 'Friday 5th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_day_007', title: 'VMI on site (Software)', details: 'Friday 5th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_fri_night_001', title: 'Finish Platform', details: 'Friday 5th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-05T18:00:00.000Z', completedAt: null },
+          { id: 'contractors_fri_night_002', title: 'Close out items handed over from Day crew', details: 'Friday 5th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-05T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      sat: {
+        day: [
+          { id: 'contractors_sat_day_001', title: 'Close Conveyor Section from Buffer', details: 'Saturday 6th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sat_day_002', title: 'Fit Board Brush to New Conveyor section', details: 'Saturday 6th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sat_day_003', title: 'Continue Commissioning Next Part', details: 'Saturday 6th - Day Shift', owner: 'Matteo/Luca', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sat_day_004', title: 'Refit Conveyors for Retarder Access', details: 'Saturday 6th - Day Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sat_day_005', title: 'VMI on site (Mech)', details: 'Saturday 6th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sat_day_006', title: 'VMI on site (Software)', details: 'Saturday 6th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_sat_night_001', title: 'Close out items handed over from Day crew', details: 'Saturday 6th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-06T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      sun: {
+        day: [
+          { id: 'contractors_sun_day_001', title: 'Continue Commissioning Assender & Board Conveyor', details: 'Sunday 7th - Day Shift', owner: 'Matteo/Luca', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_day_002', title: 'Continue Software (Matteo/Luca)', details: 'Sunday 7th - Day Shift', owner: 'Matteo/Luca', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_day_003', title: 'Test Everything', details: 'Sunday 7th - Day Shift', owner: 'All', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_day_004', title: 'Move to Retarder Build provisionally', details: 'Sunday 7th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_day_005', title: 'VMI on site (Mech)', details: 'Sunday 7th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_day_006', title: 'VMI on site (Software)', details: 'Sunday 7th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_day_007', title: 'Re-start Biga tbc', details: 'Sunday 7th - Day Shift', owner: 'TBC', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'contractors_sun_night_001', title: 'Close out items handed over from Day crew', details: 'Sunday 7th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-07T18:00:00.000Z', completedAt: null },
+          { id: 'contractors_sun_night_002', title: 'Tidy Production Area', details: 'Sunday 7th - Night Shift', owner: 'Panelto', done: false, comments: [], createdAt: '2026-06-07T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      mon8: {
+        day: [
+          { id: 'contractors_mon8_day_001', title: 'Close out any remaining Items', details: 'Monday 8th - Day Shift', owner: 'All', done: false, comments: [], createdAt: '2026-06-08T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon8_day_002', title: 'VMI on site (Software)', details: 'Monday 8th - Day Shift', owner: 'VMI', done: false, comments: [], createdAt: '2026-06-08T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon8_day_003', title: 'Re-start Production time tbc', details: 'Monday 8th - Day Shift', owner: 'TBC', done: false, comments: [], createdAt: '2026-06-08T06:00:00.000Z', completedAt: null },
+          { id: 'contractors_mon8_day_004', title: 'Continue on Retarder Build', details: 'Monday 8th - Day Shift', owner: 'Saccani/Panelto', done: false, comments: [], createdAt: '2026-06-08T06:00:00.000Z', completedAt: null }
+        ],
+        night: []
+      }
+    };
+
+    const ENGINEERING_SEED_TASKS = {
+      sun31: {
+        day: [
+          { id: 'engineering_sun31_day_001', title: 'Task TBC', details: 'Area: TBC | Sunday 31st Day shift', owner: 'Andrew', done: false, comments: [], createdAt: '2026-05-31T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_sun31_night_001', title: "Mechanical PM's/Secure Mast/Remove Guards Mixing", details: 'Area: Biga Mixer | Sunday 31st Night shift', owner: 'Padraig/Eanna', done: false, comments: [], createdAt: '2026-05-31T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      mon: {
+        day: [
+          { id: 'engineering_mon_day_001', title: 'Remove Polycord variator for Albert', details: 'Area: Fritsch | Monday 1st Dayshift', owner: 'Al/Tommy', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_mon_day_002', title: 'Manifest -Remove conveyors', details: 'Area: Proover | Monday 1st Dayshift', owner: 'Al,Martin,Colm,Tommy,Ian,Ollie', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_mon_day_003', title: 'Cleaned for Tuesday works', details: 'Area: Freezer/cooler | Monday 1st Dayshift', owner: 'Hygiene', done: false, comments: [], createdAt: '2026-06-01T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_mon_night_001', title: "Continue rollers/Pm's 2 nd cross roller", details: 'Area: Fritsch | Monday 1st Nightshift', owner: 'John M, Kevin Q', done: false, comments: [], createdAt: '2026-06-01T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      tue: {
+        day: [
+          { id: 'engineering_tue_day_001', title: "Clean AHU's site 1", details: "Area: AHU's | Tuesday 2nd Day shift", owner: 'Halcyon', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_tue_day_002', title: 'Replace flour spiros', details: 'Area: Mixing | Tuesday 2nd Day shift', owner: 'Paul Hanley /Petar/Dylan', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_tue_day_003', title: 'Steam leaks,gauge/gasket replace', details: 'Area: Oven | Tuesday 2nd Dayshift', owner: 'Al/Martin ??', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_tue_day_004', title: 'Safety Upgrade/Service visit', details: 'Area: Spiral Freezer | Tuesday 2nd Dayshift', owner: 'JBT Technicians', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_tue_day_005', title: 'Proover', details: 'Area: Manifest | Tuesday 2nd Dayshift', owner: 'Ian/Mervyn/ Ronan/Colm/Brian S', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_tue_day_006', title: 'Danmatic', details: 'Area: Manifest | Tuesday 2nd Dayshift', owner: 'Tommy/K&M ??', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_tue_day_007', title: 'Weld outfeed nose remove belt', details: 'Area: Oven | Tuesday 2nd Dayshift', owner: 'Beltons- Al/Tommy', done: false, comments: [], createdAt: '2026-06-02T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_tue_night_001', title: "Continue rollers/Pm's 2 nd cross roller", details: 'Area: Fritsch | Tuesday 2nd Nightshift', owner: 'John M, Kevin Q', done: false, comments: [], createdAt: '2026-06-02T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      wed: {
+        day: [
+          { id: 'engineering_wed_day_001', title: 'Replace flour spiros/Load cells Biga belt .', details: 'Area: Mixing | Wednesday 3rd Dayshift', owner: 'Paul Hanley/Petar/Dylan', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_day_002', title: 'Bearing housing mesh belts/Gearbox oil main motor/Far', details: 'Area: Oven | Wednesday 3rd Dayshift', owner: 'Al/Martin extra shift ??', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_day_003', title: 'Software main mixing /Biga elec panel upgrade', details: 'Area: VMI/Biga | Wednesday 3rd Dayshift', owner: 'Padraig', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_day_004', title: 'Replace wheels', details: 'Area: Spiral Cooler | Wednesday 3rd Dayshift', owner: 'Martin Meenaghan', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_day_005', title: 'Safety Upgrade/Service visit', details: 'Area: Spiral Freezer | Wednesday 3rd Dayshift', owner: 'JBT Technicians', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_day_006', title: 'Proover', details: 'Area: Manifest | Wednesday 3rd Dayshift', owner: 'Ian/Mervyn/ Ronan/Brian S/Martynas', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_day_007', title: 'Danmatic', details: 'Area: Manifest | Wednesday 3rd Dayshift', owner: 'Tommy/K&M ??', done: false, comments: [], createdAt: '2026-06-03T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_wed_night_001', title: "Continue rollers/Pm's 2 nd cross roller/TBP Sprockets", details: 'Area: Fritsch | Wednesday 3rd Nightshift', owner: 'John M, Kevin Q', done: false, comments: [], createdAt: '2026-06-03T18:00:00.000Z', completedAt: null },
+          { id: 'engineering_wed_night_002', title: 'Depositor belt drive/idle shaft relocation', details: 'Area: Manifest | Wednesday 3rd Nightshift', owner: 'Seamus /Andrew/', done: false, comments: [], createdAt: '2026-06-03T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      thu: {
+        day: [
+          { id: 'engineering_thu_day_001', title: "PM'S /Spiro finish/Tag Motors sensors/Clean out drives", details: 'Area: Mixing | Thursday 4th Dayshift', owner: 'Paul/Petar', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_002', title: 'PTB fit oven outfeed belt', details: 'Area: Oven | Thursday 4th Dayshift', owner: 'PTB', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_003', title: 'Replace damaged links', details: 'Area: Spiral Cooler | Thursday 4th Dayshift', owner: 'Martin Meenaghan', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_004', title: 'Infeed belt overhaul/Transfer roller oven outfeed', details: 'Area: Spiral Freezer | Thursday 4th Dayshift', owner: 'Al/Dylan', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_005', title: 'Software main mixing /Biga elec panel upgrade', details: 'Area: VMI/Biga | Thursday 4th Dayshift', owner: 'Padraig', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_006', title: 'Safety Upgrade/Service visit', details: 'Area: Spiral Freezer | Thursday 4th Dayshift', owner: 'JBT Technicians', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_007', title: 'Proover', details: 'Area: Manifest | Thursday 4th Dayshift', owner: 'Ian/Mervyn/ Ronan/Colm/Martynas', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_day_008', title: 'Danmatic', details: 'Area: Manifest | Thursday 4th Dayshift', owner: 'Tommy/K&M ??', done: false, comments: [], createdAt: '2026-06-04T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_thu_night_001', title: "PM's", details: 'Area: Packing/Palletiser | Thursday 4th Nightshift', owner: 'Andrew Miles/John M', done: false, comments: [], createdAt: '2026-06-04T18:00:00.000Z', completedAt: null },
+          { id: 'engineering_thu_night_002', title: 'Cabling', details: 'Area: Manifest | Thursday 4th Nightshift', owner: 'Mick', done: false, comments: [], createdAt: '2026-06-04T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      fri: {
+        day: [
+          { id: 'engineering_fri_day_001', title: "PM'S /Spiro finish", details: 'Area: Mixing | Friday 5th Dayshift', owner: 'Paul/Petar', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_fri_day_002', title: 'Software main mixing /Biga elec panel upgrade', details: 'Area: VMI/Biga | Friday 5th Dayshift', owner: 'Padraig', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_fri_day_003', title: 'Proover', details: 'Area: Manifest | Friday 5th Dayshift', owner: 'Ian/Mervyn/ Ronan/Colm/Tommy/Martynas/Dylan', done: false, comments: [], createdAt: '2026-06-05T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_fri_night_001', title: 'Task TBC', details: 'Area: Manifest | Friday 5th Nightshift', owner: 'Martin L/Kevin Q', done: false, comments: [], createdAt: '2026-06-05T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      sat: {
+        day: [
+          { id: 'engineering_sat_day_001', title: 'Proover??', details: 'Area: Manifest | Saturday 6th Dayshift', owner: 'John M,Colm ,Ronan, Tommy ??', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null },
+          { id: 'engineering_sat_day_002', title: 'Software main mixing /Biga elec panel upgrade', details: 'Area: VMI/Biga | Saturday 6th Dayshift', owner: 'Padraig', done: false, comments: [], createdAt: '2026-06-06T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_sat_night_001', title: 'Proover', details: 'Area: Manifest | Saturday 6th Nightshift', owner: 'Martin L/Kevin Q', done: false, comments: [], createdAt: '2026-06-06T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      sun: {
+        day: [
+          { id: 'engineering_sun_day_001', title: 'Proover??', details: 'Area: Manifest | Sunday 7th Dayshift', owner: 'Conor', done: false, comments: [], createdAt: '2026-06-07T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_sun_night_001', title: 'All Areas -Start oven/freezer checks/cooler belt/Gaurdin', details: 'Area: Bakery 1 Start up prep | Sunday 7th Nightshift', owner: 'Martin L/Kevin Q /AL', done: false, comments: [], createdAt: '2026-06-07T18:00:00.000Z', completedAt: null }
+        ]
+      },
+      mon8: {
+        day: [
+          { id: 'engineering_mon8_day_001', title: 'Start-up', details: 'Area: Bakery 1 | Monday 8th Dayshift', owner: 'Andrew /Tommy /Ollie/Colm/Paul', done: false, comments: [], createdAt: '2026-06-08T06:00:00.000Z', completedAt: null }
+        ],
+        night: [
+          { id: 'engineering_mon8_night_001', title: 'Task TBC', details: 'Area: Bakery 1 | Monday Nightshift 8th', owner: 'Padraig,', done: false, comments: [], createdAt: '2026-06-08T18:00:00.000Z', completedAt: null }
+        ]
+      }
+    };
+
+    const emptyPlanner = () => {
+      const plannerTemplate = {
+        days: Object.fromEntries(
+          DAYS.map(day => [
+            day.id,
+            {
+              day: {
+                engineering: [...(ENGINEERING_SEED_TASKS[day.id]?.day || [])],
+                contractors: [...(CONTRACTORS_SEED_TASKS[day.id]?.day || [])],
+                hygiene: [...(HYGIENE_SEED_TASKS[day.id]?.day || [])]
+              },
+              night: {
+                engineering: [...(ENGINEERING_SEED_TASKS[day.id]?.night || [])],
+                contractors: [...(CONTRACTORS_SEED_TASKS[day.id]?.night || [])],
+                hygiene: [...(HYGIENE_SEED_TASKS[day.id]?.night || [])]
+              }
+            }
+          ])
+        )
+      };
+
+      return plannerTemplate;
+    };
+
+    let planner = emptyPlanner();
+    let activeDay = 'sun31';
+    const HYGIENE_SEED_VERSION = 'hygiene_exact_word_sunday_31_may_v2';
+    const CONTRACTOR_SEED_VERSION = 'contractors_schedule_from_image_v1';
+    const ENGINEERING_SEED_VERSION = 'engineering_schedule_from_image_v1';
+    let db = null;
+    let plannerRef = null;
+    let firebaseReady = false;
+    let activeDetailTask = null;
+    let activeEditTask = null;
+    let currentRole = 'locked';
+    const ADMIN_PASSWORD = 'Eng2022';
+    const STANDARD_PASSWORD = '2906';
+    const SESSION_DURATION_MS = 30 * 60 * 1000;
+    let sessionTimer = null;
+
+    const uid = () => `job_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    function getCurrentDayData() {
+      return planner.days?.[activeDay] || emptyPlanner().days[activeDay];
+    }
+
+    function setStatus(text) {
+      document.getElementById('syncStatus').textContent = text;
+    }
+
+    function initFirebase() {
+      try {
+        if (!firebaseConfig.projectId) {
+          setStatus('Firebase config missing - using local browser storage only.');
+          loadLocalPlanner();
+          renderAll();
+          return;
+        }
+
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        plannerRef = doc(db, 'manifestProject2026', 'line1ShutdownWeek');
+        firebaseReady = true;
+
+        onSnapshot(
+          plannerRef,
+          snapshot => {
+            if (snapshot.exists()) {
+              const data = snapshot.data();
+              planner = mergeWithTemplate(data.planner || emptyPlanner());
+              const hygieneMigrated = applyExactHygieneSeedIfNeeded();
+              const contractorsMigrated = applyExactContractorSeedIfNeeded();
+              const engineeringMigrated = applyExactEngineeringSeedIfNeeded();
+              const migrated = hygieneMigrated || contractorsMigrated || engineeringMigrated;
+              saveLocalPlanner();
+              setStatus(migrated ? 'Manifest jobs corrected and synced.' : 'Live sync connected.');
+              if (migrated) savePlanner();
+            } else {
+              planner = emptyPlanner();
+              savePlanner();
+              setStatus('Planner created in Firebase.');
+            }
+            renderAll();
+          },
+          error => {
+            console.error('Manifest Firebase sync failed:', error);
+            setStatus('Firebase sync failed - using local browser storage.');
+            loadLocalPlanner();
+            renderAll();
+          }
+        );
+      } catch (error) {
+        console.error('Firebase init failed:', error);
+        setStatus('Firebase not connected - using local browser storage.');
+        loadLocalPlanner();
+        renderAll();
+      }
+    }
+
+    function mergeWithTemplate(source) {
+      const base = emptyPlanner();
+      DAYS.forEach(day => {
+        SHIFTS.forEach(shift => {
+          DEPARTMENTS.forEach(dept => {
+            base.days[day.id][shift.id][dept.id] =
+              source?.days?.[day.id]?.[shift.id]?.[dept.id] || [];
+          });
+        });
+      });
+      base.hygieneSeedVersion = source?.hygieneSeedVersion || null;
+      base.contractorSeedVersion = source?.contractorSeedVersion || null;
+      base.engineeringSeedVersion = source?.engineeringSeedVersion || null;
+      return base;
+    }
+
+    function applyExactHygieneSeedIfNeeded() {
+      if (planner.hygieneSeedVersion === HYGIENE_SEED_VERSION) return false;
+
+      DAYS.forEach(day => {
+        planner.days[day.id].day.hygiene = [...(HYGIENE_SEED_TASKS[day.id]?.day || [])];
+        planner.days[day.id].night.hygiene = [...(HYGIENE_SEED_TASKS[day.id]?.night || [])];
+      });
+
+      planner.hygieneSeedVersion = HYGIENE_SEED_VERSION;
+      return true;
+    }
+
+    function applyExactContractorSeedIfNeeded() {
+      if (planner.contractorSeedVersion === CONTRACTOR_SEED_VERSION) return false;
+
+      DAYS.forEach(day => {
+        planner.days[day.id].day.contractors = [...(CONTRACTORS_SEED_TASKS[day.id]?.day || [])];
+        planner.days[day.id].night.contractors = [...(CONTRACTORS_SEED_TASKS[day.id]?.night || [])];
+      });
+
+      planner.contractorSeedVersion = CONTRACTOR_SEED_VERSION;
+      return true;
+    }
+
+    function applyExactEngineeringSeedIfNeeded() {
+      if (planner.engineeringSeedVersion === ENGINEERING_SEED_VERSION) return false;
+
+      DAYS.forEach(day => {
+        planner.days[day.id].day.engineering = [...(ENGINEERING_SEED_TASKS[day.id]?.day || [])];
+        planner.days[day.id].night.engineering = [...(ENGINEERING_SEED_TASKS[day.id]?.night || [])];
+      });
+
+      planner.engineeringSeedVersion = ENGINEERING_SEED_VERSION;
+      return true;
+    }
+
+    function loadLocalPlanner() {
+      try {
+        const saved = localStorage.getItem('manifestProject2026_line1ShutdownWeek');
+        planner = saved ? mergeWithTemplate(JSON.parse(saved)) : emptyPlanner();
+        applyExactHygieneSeedIfNeeded();
+        applyExactContractorSeedIfNeeded();
+        applyExactEngineeringSeedIfNeeded();
+      } catch {
+        planner = emptyPlanner();
+      }
+    }
+
+    function saveLocalPlanner() {
+      localStorage.setItem('manifestProject2026_line1ShutdownWeek', JSON.stringify(planner));
+    }
+
+    async function savePlanner() {
+      saveLocalPlanner();
+      renderAll();
+
+      if (!firebaseReady || !plannerRef) return;
+
+      try {
+        await setDoc(plannerRef, {
+          planner,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        setStatus('Saved and synced.');
+      } catch (error) {
+        console.error('Save failed:', error);
+        setStatus('Save failed in Firebase - local copy saved.');
+      }
+    }
+
+    function renderAll() {
+      checkSession();
+      renderLoginState();
+      renderRoleBar();
+      renderDayTabs();
+      renderTaskDayOptions();
+      renderSummary();
+      renderShifts();
+    }
+
+    function getSavedSession() {
+      try {
+        return JSON.parse(localStorage.getItem('manifestProjectSession') || 'null');
+      } catch {
+        return null;
+      }
+    }
+
+    function saveSession(role) {
+      const expiresAt = Date.now() + SESSION_DURATION_MS;
+      localStorage.setItem('manifestProjectSession', JSON.stringify({ role, expiresAt }));
+      currentRole = role;
+      startSessionTimer();
+    }
+
+    function clearSession() {
+      localStorage.removeItem('manifestProjectSession');
+      currentRole = 'locked';
+      if (sessionTimer) clearTimeout(sessionTimer);
+      sessionTimer = null;
+    }
+
+    function checkSession() {
+      const session = getSavedSession();
+      if (!session || !session.role || !session.expiresAt || Date.now() > session.expiresAt) {
+        clearSession();
+        return false;
+      }
+
+      currentRole = session.role;
+      startSessionTimer();
+      return true;
+    }
+
+    function startSessionTimer() {
+      if (sessionTimer) clearTimeout(sessionTimer);
+      const session = getSavedSession();
+      if (!session?.expiresAt) return;
+
+      const timeLeft = Math.max(0, session.expiresAt - Date.now());
+      sessionTimer = setTimeout(() => {
+        clearSession();
+        renderAll();
+        alert('Session expired. Please login again.');
+      }, timeLeft);
+    }
+
+    function renderLoginState() {
+      const loginScreen = document.getElementById('loginScreen');
+      const appRoot = document.getElementById('appRoot');
+      const isLocked = currentRole === 'locked';
+
+      if (loginScreen) loginScreen.classList.toggle('open', isLocked);
+      if (appRoot) appRoot.style.display = isLocked ? 'none' : 'block';
+      document.body.classList.toggle('locked', isLocked);
+
+      if (isLocked) {
+        setTimeout(() => document.getElementById('mainLoginPassword')?.focus(), 100);
+      }
+    }
+
+    function isAdmin() {
+      return currentRole === 'admin';
+    }
+
+    function renderRoleBar() {
+      const label = document.getElementById('roleLabel');
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (!label || !logoutBtn) return;
+
+      if (currentRole === 'locked') {
+        label.textContent = 'Not logged in';
+      } else {
+        label.textContent = isAdmin() ? 'Logged in as Admin' : 'Logged in as Standard User';
+      }
+      logoutBtn.style.display = currentRole === 'locked' ? 'none' : 'inline-flex';
+    }
+
+    window.openLoginModal = function() {
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginModalBackdrop').classList.add('open');
+      setTimeout(() => document.getElementById('loginPassword').focus(), 100);
+    };
+
+    window.closeLoginModal = function(event) {
+      if (event && event.target.id !== 'loginModalBackdrop') return;
+      document.getElementById('loginModalBackdrop').classList.remove('open');
+    };
+
+    function handlePasswordLogin(password, hintElementId) {
+      const hint = hintElementId ? document.getElementById(hintElementId) : null;
+
+      if (password === ADMIN_PASSWORD) {
+        saveSession('admin');
+        closeLoginModal();
+        renderAll();
+        return;
+      }
+
+      if (password === STANDARD_PASSWORD) {
+        saveSession('user');
+        closeLoginModal();
+        renderAll();
+        return;
+      }
+
+      if (hint) hint.textContent = 'Wrong password. Please try again.';
+      else alert('Wrong password. Please try again.');
+    }
+
+    window.mainLogin = function() {
+      const passwordInput = document.getElementById('mainLoginPassword');
+      const password = passwordInput.value;
+      handlePasswordLogin(password, 'mainLoginHint');
+      passwordInput.value = '';
+    };
+
+    window.loginWithPassword = function() {
+      const password = document.getElementById('loginPassword').value;
+      handlePasswordLogin(password);
+      document.getElementById('loginPassword').value = '';
+    };
+
+    window.logoutUser = function() {
+      clearSession();
+      renderAll();
+    };
+
+    function renderDayTabs() {
+      const container = document.getElementById('dayTabs');
+      container.innerHTML = DAYS.map(day => `
+        <button class="day-tab ${day.id === activeDay ? 'active' : ''}" data-day="${day.id}">
+          <strong>${day.label}</strong>
+          <span>${day.date}</span>
+        </button>
+      `).join('');
+
+      container.querySelectorAll('.day-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeDay = btn.dataset.day;
+          renderAll();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+    }
+
+    function renderTaskDayOptions() {
+      const select = document.getElementById('taskDay');
+      if (select) {
+        select.innerHTML = DAYS.map(day => `
+          <option value="${day.id}" ${day.id === activeDay ? 'selected' : ''}>${day.full} - ${day.date}</option>
+        `).join('');
+      }
+
+      const editSelect = document.getElementById('editTaskDay');
+      if (editSelect) {
+        editSelect.innerHTML = DAYS.map(day => `
+          <option value="${day.id}">${day.full} - ${day.date}</option>
+        `).join('');
+      }
+    }
+
+    function getAllTasksForCurrentDay() {
+      const dayData = getCurrentDayData();
+      const tasks = [];
+
+      SHIFTS.forEach(shift => {
+        DEPARTMENTS.forEach(dept => {
+          const list = dayData[shift.id][dept.id] || [];
+          list.forEach(task => tasks.push({ ...task, shift: shift.id, department: dept.id }));
+        });
+      });
+
+      return tasks;
+    }
+
+    function renderSummary() {
+      const tasks = getAllTasksForCurrentDay();
+      const done = tasks.filter(task => task.done).length;
+
+      document.getElementById('summaryTotal').textContent = tasks.length;
+      document.getElementById('summaryDone').textContent = done;
+      document.getElementById('summaryOpen').textContent = tasks.length - done;
+    }
+
+    function renderShifts() {
+      const container = document.getElementById('shiftContainer');
+      const activeDayInfo = DAYS.find(day => day.id === activeDay);
+      const dayData = getCurrentDayData();
+
+      container.innerHTML = SHIFTS.map(shift => {
+        const shiftTasks = DEPARTMENTS.flatMap(dept => dayData[shift.id][dept.id] || []);
+        const done = shiftTasks.filter(task => task.done).length;
+
+        return `
+          <section class="shift-section">
+            <div class="shift-header">
+              <div>
+                <h2>${shift.label}</h2>
+                <small>${activeDayInfo.full}, ${activeDayInfo.date} · ${shift.time}</small>
+              </div>
+              <div class="progress-pill">${done}/${shiftTasks.length} done</div>
+            </div>
+
+            <div class="departments">
+              ${DEPARTMENTS.map(dept => renderDepartmentCard(shift.id, dept, dayData[shift.id][dept.id] || [])).join('')}
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    function renderDepartmentCard(shiftId, dept, tasks) {
+      const done = tasks.filter(task => task.done).length;
+
+      return `
+        <article class="department-card">
+          <div class="department-title ${dept.id}">
+            <span>${dept.label}</span>
+            <span class="dept-count">${done}/${tasks.length}</span>
+          </div>
+          <div class="task-list">
+            ${tasks.length ? tasks.map(task => renderTaskItem(shiftId, dept.id, task)).join('') : `
+              <div class="empty-state">No jobs added yet.</div>
+            `}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderTaskItem(shiftId, deptId, task) {
+      const safeDetails = task.details ? escapeHtml(task.details) : '';
+      const safeOwner = task.owner ? escapeHtml(task.owner) : '';
+      const commentsCount = Array.isArray(task.comments) ? task.comments.length : 0;
+      const deptLabel = DEPARTMENTS.find(dept => dept.id === deptId)?.label || deptId;
+      const shiftLabel = SHIFTS.find(shift => shift.id === shiftId)?.label || shiftId;
+      const contextText = `${deptLabel} · ${shiftLabel}`;
+      const alreadyHasContext = `${task.title || ''} ${task.details || ''}`.toLowerCase().includes(shiftLabel.toLowerCase()) && `${task.title || ''} ${task.details || ''}`.toLowerCase().includes(deptLabel.toLowerCase());
+
+      return `
+        <div class="task-item ${task.done ? 'done' : ''}">
+          <input
+            type="checkbox"
+            ${task.done ? 'checked' : ''}
+            onclick="event.stopPropagation()"
+            onchange="window.toggleTaskDone('${activeDay}', '${shiftId}', '${deptId}', '${task.id}')"
+          />
+          <div class="task-main" onclick="window.openJobDetailModal('${activeDay}', '${shiftId}', '${deptId}', '${task.id}')">
+            <strong>${escapeHtml(task.title)}</strong>
+            ${safeDetails ? `<p>${safeDetails}</p>` : ''}
+            <div class="task-meta">
+              ${safeOwner ? `<span class="tag">${safeOwner}</span>` : ''}
+              ${task.done ? '<span class="tag">Completed</span>' : '<span class="tag">Open</span>'}
+              ${commentsCount ? `<span class="comment-badge">💬 ${commentsCount}</span>` : ''}
+              ${isAdmin() ? `<button class="delete-task-btn" onclick="event.stopPropagation(); window.openEditTaskModal('${activeDay}', '${shiftId}', '${deptId}', '${task.id}')">Edit job</button><button class="delete-task-btn" onclick="event.stopPropagation(); window.deleteTask('${activeDay}', '${shiftId}', '${deptId}', '${task.id}')">Delete job</button>` : ''}
+            </div>
+            ${alreadyHasContext ? '' : `<div class="task-context-line">${contextText}</div>`}
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    window.toggleTaskDone = function(dayId, shiftId, deptId, taskId) {
+      const list = planner.days[dayId][shiftId][deptId];
+      const task = list.find(item => item.id === taskId);
+      if (!task) return;
+      task.done = !task.done;
+      task.completedAt = task.done ? new Date().toISOString() : null;
+      savePlanner();
+    };
+
+    function findTask(dayId, shiftId, deptId, taskId) {
+      const list = planner.days?.[dayId]?.[shiftId]?.[deptId] || [];
+      return list.find(item => item.id === taskId) || null;
+    }
+
+    window.openJobDetailModal = function(dayId, shiftId, deptId, taskId) {
+      const task = findTask(dayId, shiftId, deptId, taskId);
+      if (!task) return;
+
+      activeDetailTask = { dayId, shiftId, deptId, taskId };
+
+      document.getElementById('jobDetailTitle').textContent = task.title || 'Job details';
+      document.getElementById('jobDetailOwner').textContent = task.owner || 'No owner / team added';
+      document.getElementById('jobDetailDetails').textContent = task.details || 'No details added.';
+      document.getElementById('jobCommentInput').value = '';
+
+      renderJobComments(task);
+      document.getElementById('jobDetailBackdrop').classList.add('open');
+    };
+
+    function renderJobComments(task) {
+      const container = document.getElementById('jobCommentsList');
+      const comments = Array.isArray(task.comments) ? task.comments : [];
+
+      if (!comments.length) {
+        container.innerHTML = '<div class="empty-state">No comments added yet.</div>';
+        return;
+      }
+
+      container.innerHTML = comments.map(comment => `
+        <div class="comment-item">
+          <div class="comment-top-row">
+            <div class="comment-text">
+              ${escapeHtml(comment.text)}
+              <small>${escapeHtml(comment.createdAtText || '')}</small>
+            </div>
+            ${isAdmin() ? `<button class="delete-comment-btn" onclick="window.deleteJobComment('${comment.id}')">Delete</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.closeJobDetailModal = function(event) {
+      if (event && event.target.id !== 'jobDetailBackdrop') return;
+      document.getElementById('jobDetailBackdrop').classList.remove('open');
+      activeDetailTask = null;
+    };
+
+    window.saveJobComment = function() {
+      if (!activeDetailTask) return;
+
+      const commentText = document.getElementById('jobCommentInput').value.trim();
+      if (!commentText) {
+        alert('Please enter comment.');
+        return;
+      }
+
+      const { dayId, shiftId, deptId, taskId } = activeDetailTask;
+      const task = findTask(dayId, shiftId, deptId, taskId);
+      if (!task) return;
+
+      if (!Array.isArray(task.comments)) task.comments = [];
+      task.comments.push({
+        id: uid(),
+        text: commentText,
+        createdAt: new Date().toISOString(),
+        createdAtText: new Date().toLocaleString()
+      });
+
+      document.getElementById('jobCommentInput').value = '';
+      renderJobComments(task);
+      savePlanner();
+    };
+
+    window.openEditTaskModal = function(dayId, shiftId, deptId, taskId) {
+      if (!isAdmin()) {
+        alert('Only admin can edit jobs.');
+        return;
+      }
+
+      const task = findTask(dayId, shiftId, deptId, taskId);
+      if (!task) return;
+
+      activeEditTask = { dayId, shiftId, deptId, taskId };
+
+      document.getElementById('editTaskDay').value = dayId;
+      document.getElementById('editTaskShift').value = shiftId;
+      document.getElementById('editTaskDepartment').value = deptId;
+      document.getElementById('editTaskTitle').value = task.title || '';
+      document.getElementById('editTaskDetails').value = task.details || '';
+      document.getElementById('editTaskOwner').value = task.owner || '';
+
+      document.getElementById('editTaskModalBackdrop').classList.add('open');
+      setTimeout(() => document.getElementById('editTaskTitle').focus(), 100);
+    };
+
+    window.closeEditTaskModal = function(event) {
+      if (event && event.target.id !== 'editTaskModalBackdrop') return;
+      document.getElementById('editTaskModalBackdrop').classList.remove('open');
+      activeEditTask = null;
+    };
+
+    window.saveEditedTask = function() {
+      if (!isAdmin()) {
+        alert('Only admin can edit jobs.');
+        return;
+      }
+
+      if (!activeEditTask) return;
+
+      const oldDayId = activeEditTask.dayId;
+      const oldShiftId = activeEditTask.shiftId;
+      const oldDeptId = activeEditTask.deptId;
+      const taskId = activeEditTask.taskId;
+      const oldList = planner.days?.[oldDayId]?.[oldShiftId]?.[oldDeptId];
+      if (!Array.isArray(oldList)) return;
+
+      const oldIndex = oldList.findIndex(item => item.id === taskId);
+      if (oldIndex === -1) return;
+
+      const title = document.getElementById('editTaskTitle').value.trim();
+      if (!title) {
+        alert('Please enter job title.');
+        return;
+      }
+
+      const newDayId = document.getElementById('editTaskDay').value;
+      const newShiftId = document.getElementById('editTaskShift').value;
+      const newDeptId = document.getElementById('editTaskDepartment').value;
+
+      const updatedTask = {
+        ...oldList[oldIndex],
+        title,
+        details: document.getElementById('editTaskDetails').value.trim(),
+        owner: document.getElementById('editTaskOwner').value.trim(),
+        editedAt: new Date().toISOString()
+      };
+
+      oldList.splice(oldIndex, 1);
+      planner.days[newDayId][newShiftId][newDeptId].push(updatedTask);
+      activeDay = newDayId;
+
+      closeEditTaskModal();
+      savePlanner();
+    };
+
+    window.deleteTask = function(dayId, shiftId, deptId, taskId) {
+      if (!isAdmin()) {
+        alert('Only admin can delete jobs.');
+        return;
+      }
+
+      const list = planner.days?.[dayId]?.[shiftId]?.[deptId];
+      if (!Array.isArray(list)) return;
+
+      const task = list.find(item => item.id === taskId);
+      if (!task) return;
+
+      const confirmed = confirm(`Delete this job?
+
+${task.title}`);
+      if (!confirmed) return;
+
+      planner.days[dayId][shiftId][deptId] = list.filter(item => item.id !== taskId);
+      savePlanner();
+    };
+
+    window.deleteJobComment = function(commentId) {
+      if (!isAdmin()) {
+        alert('Only admin can delete comments.');
+        return;
+      }
+
+      if (!activeDetailTask) return;
+
+      const { dayId, shiftId, deptId, taskId } = activeDetailTask;
+      const task = findTask(dayId, shiftId, deptId, taskId);
+      if (!task || !Array.isArray(task.comments)) return;
+
+      const comment = task.comments.find(item => item.id === commentId);
+      if (!comment) return;
+
+      const confirmed = confirm('Delete this comment?');
+      if (!confirmed) return;
+
+      task.comments = task.comments.filter(item => item.id !== commentId);
+      renderJobComments(task);
+      savePlanner();
+    };
+
+    window.openTaskModal = function() {
+      document.getElementById('taskDay').value = activeDay;
+      document.getElementById('taskShift').value = 'day';
+      document.getElementById('taskDepartment').value = 'engineering';
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskDetails').value = '';
+      document.getElementById('taskOwner').value = '';
+      document.getElementById('taskModalBackdrop').classList.add('open');
+      setTimeout(() => document.getElementById('taskTitle').focus(), 100);
+    };
+
+    window.closeTaskModal = function(event) {
+      if (event && event.target.id !== 'taskModalBackdrop') return;
+      document.getElementById('taskModalBackdrop').classList.remove('open');
+    };
+
+    window.saveNewTask = function() {
+      const dayId = document.getElementById('taskDay').value;
+      const shiftId = document.getElementById('taskShift').value;
+      const deptId = document.getElementById('taskDepartment').value;
+      const title = document.getElementById('taskTitle').value.trim();
+      const details = document.getElementById('taskDetails').value.trim();
+      const owner = document.getElementById('taskOwner').value.trim();
+
+      if (!title) {
+        alert('Please enter job title.');
+        return;
+      }
+
+      planner.days[dayId][shiftId][deptId].push({
+        id: uid(),
+        title,
+        details,
+        owner,
+        done: false,
+        comments: [],
+        createdAt: new Date().toISOString(),
+        completedAt: null
+      });
+
+      activeDay = dayId;
+      closeTaskModal();
+      savePlanner();
+    };
+
+    window.expandAllCurrentDay = function() {
+      const dayData = getCurrentDayData();
+      let text = DAYS.find(day => day.id === activeDay).full + ' Manifest Jobs\n\n';
+
+      SHIFTS.forEach(shift => {
+        text += `${shift.label}\n`;
+        DEPARTMENTS.forEach(dept => {
+          const jobs = dayData[shift.id][dept.id] || [];
+          text += `\n${dept.label}:\n`;
+          text += jobs.length
+            ? jobs.map(job => `${job.done ? '✓' : '□'} ${job.title}${job.owner ? ' - ' + job.owner : ''}`).join('\n')
+            : 'No jobs added.';
+          text += '\n';
+        });
+        text += '\n';
+      });
+
+      alert(text);
+    };
+
+    window.goHome = function() {
+      // Change this link if your homepage has another filename.
+      window.location.href = 'index.html';
+    };
+
+    initFirebase();
+  </script>
+</body>
+</html>
