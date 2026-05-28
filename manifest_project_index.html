@@ -1612,13 +1612,8 @@
             if (snapshot.exists()) {
               const data = snapshot.data();
               planner = mergeWithTemplate(data.planner || emptyPlanner());
-              const hygieneMigrated = applyExactHygieneSeedIfNeeded();
-              const contractorsMigrated = applyExactContractorSeedIfNeeded();
-              const engineeringMigrated = applyExactEngineeringSeedIfNeeded();
-              const migrated = hygieneMigrated || contractorsMigrated || engineeringMigrated;
               saveLocalPlanner();
-              setStatus(migrated ? 'Manifest jobs corrected and synced.' : 'Live sync connected.');
-              if (migrated) savePlanner();
+              setStatus('Live sync connected.');
             } else {
               planner = emptyPlanner();
               savePlanner();
@@ -1697,9 +1692,6 @@
       try {
         const saved = localStorage.getItem('manifestProject2026_line1ShutdownWeek');
         planner = saved ? mergeWithTemplate(JSON.parse(saved)) : emptyPlanner();
-        applyExactHygieneSeedIfNeeded();
-        applyExactContractorSeedIfNeeded();
-        applyExactEngineeringSeedIfNeeded();
       } catch {
         planner = emptyPlanner();
       }
