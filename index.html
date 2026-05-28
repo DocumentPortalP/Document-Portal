@@ -6,47 +6,64 @@
 <title>Engineering Portal</title>
 
 <style>
+:root{
+  --bg1:#e9eef5;
+  --bg2:#dbe6f3;
+  --card:#ffffff;
+  --text:#1f2937;
+  --muted:#64748b;
+  --border:#dbe2ea;
+  --primary:#1f6feb;
+  --primary-dark:#174ea6;
+  --shadow:0 18px 40px rgba(15,23,42,.10);
+}
+
+*{box-sizing:border-box;}
+
 body{
   margin:0;
   min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(135deg,#e9eef5,#dbe6f3);
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
   font-family:Inter,Segoe UI,Arial,sans-serif;
+  color:var(--text);
 }
 
 .container{
   width:min(1100px,92vw);
+  padding:28px 0;
 }
 
 h1{
   text-align:center;
-  margin-bottom:40px;
-  color:#1f2937;
+  margin:0 0 34px;
+  color:var(--text);
   font-size:42px;
+  line-height:1.1;
 }
 
 .cards{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:32px;
+  gap:24px;
 }
 
 .card{
-  background:white;
+  background:var(--card);
   border-radius:28px;
-  padding:48px 36px;
-  min-height:280px;
+  padding:42px 30px;
+  min-height:250px;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
   text-align:center;
   text-decoration:none;
-  color:#1f2937;
-  border:1px solid #dbe2ea;
-  box-shadow:0 18px 40px rgba(15,23,42,.10);
+  color:var(--text);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
   transition:.25s ease;
 }
 
@@ -55,28 +72,106 @@ h1{
   box-shadow:0 24px 50px rgba(15,23,42,.16);
 }
 
+.card.primary{
+  grid-column:1 / -1;
+  min-height:230px;
+  background:linear-gradient(135deg,#ffffff 0%,#eaf2ff 100%);
+  border-color:#bfdbfe;
+}
+
 .icon{
-  font-size:64px;
-  margin-bottom:20px;
+  font-size:62px;
+  margin-bottom:18px;
 }
 
 .title{
   font-size:30px;
   font-weight:800;
-  margin-bottom:12px;
+  margin-bottom:10px;
 }
 
 .desc{
   font-size:16px;
-  color:#64748b;
-  max-width:320px;
+  color:var(--muted);
+  max-width:420px;
   line-height:1.5;
 }
 
+.badge{
+  margin-top:14px;
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:7px 11px;
+  background:#dbeafe;
+  color:var(--primary-dark);
+  font-size:12px;
+  font-weight:800;
+}
+
 @media (max-width:800px){
-  .cards{
-    grid-template-columns:1fr;
+  body{
+    align-items:flex-start;
   }
+
+  .container{
+    width:100%;
+    min-height:100vh;
+    padding:20px 12px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  h1{
+    font-size:30px;
+    margin:4px 0 18px;
+  }
+
+  .cards{
+    flex:1;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1.15fr 1fr;
+    gap:12px;
+  }
+
+  .card{
+    min-height:0;
+    border-radius:22px;
+    padding:22px 12px;
+  }
+
+  .card.primary{
+    grid-column:1 / -1;
+    min-height:0;
+  }
+
+  .icon{
+    font-size:46px;
+    margin-bottom:12px;
+  }
+
+  .title{
+    font-size:20px;
+    margin-bottom:7px;
+  }
+
+  .desc{
+    font-size:12px;
+    line-height:1.35;
+  }
+
+  .badge{
+    font-size:11px;
+    padding:6px 9px;
+    margin-top:10px;
+  }
+}
+
+@media (max-width:380px){
+  .title{font-size:18px;}
+  .desc{font-size:11px;}
+  .icon{font-size:40px;}
 }
 </style>
 </head>
@@ -85,20 +180,23 @@ h1{
     <h1>Engineering Portal</h1>
 
     <div class="cards">
+      <a class="card primary" href="manifest_project_index.html">
+        <div class="icon">📋</div>
+        <div class="title">Manifest Project</div>
+        <div class="desc">Shutdown planner for Engineering, Contractors and Hygiene jobs.</div>
+        <div class="badge">31 May – 8 Jun</div>
+      </a>
+
       <a class="card" href="shift_cover_schedule.html">
         <div class="icon">📅</div>
         <div class="title">Shift Schedule</div>
-        <div class="desc">Under development
-          
-        </div>
+        <div class="desc">Shift cover and engineering schedule.</div>
       </a>
 
       <a class="card" href="documentation_portal.html">
         <div class="icon">📁</div>
         <div class="title">Documentation Portal</div>
-        <div class="desc">
-        
-        </div>
+        <div class="desc">Technical documentation and asset information.</div>
       </a>
     </div>
   </div>
