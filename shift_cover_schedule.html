@@ -802,12 +802,18 @@ Call agency if needed"></textarea>
 
     <input id="titleInput" placeholder="Shift title">
 
-    <div class="small" style="margin-bottom:8px;">Assigned engineers</div>
+    <div class="small" style="margin-bottom:8px;">Assigned engineers (background template only)</div>
+    <div class="small" style="margin-bottom:10px;">Previously edited individual shift cells stay exactly as saved. Changes here apply only to cells without manual corrections.</div>
     <div id="selectedEngineersList" class="selected-engineers-list"></div>
 
     <div class="engineer-picker-row">
       <select id="addEngineerSelect"></select>
       <button type="button" id="addEngineerBtn">Add</button>
+    </div>
+    <div id="newTemplateEngineerFields" style="display:none;margin-bottom:12px;">
+      <div class="small" style="margin-bottom:7px;">New engineer (added only when you click Apply)</div>
+      <input id="newTemplateEngineerName" placeholder="Full name" autocomplete="off">
+      <input id="newTemplateEngineerInitials" placeholder="Initials (e.g. KQ)" autocomplete="off">
     </div>
 
     <select id="colorInput">
@@ -1138,6 +1144,51 @@ Call agency if needed"></textarea>
     51: ['Mon 14','Tue 15','Wed 16','Thu 17','Fri 18','Sat 19','Sun 20'],
     52: ['Mon 21','Tue 22','Wed 23','Thu 24','Fri 25','Sat 26','Sun 27']
   };
+  // 2026 uses its original numeric week keys to preserve all existing Firestore data.
+  // New-year keys are year-prefixed: 202701 ... 202752, so notes, flags and
+  // cell overrides can never collide with the existing 2026 entries.
+  const last2026Week = 53; // ISO year 2026 has 53 weeks (28 Dec 2026 - 3 Jan 2027).
+  function isoWeekCount(year) {
+    const date = new Date(Date.UTC(year, 11, 28));
+    const day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  }
+  function getPlannerWeekKey(year, week) {
+    return year === 2026 ? week : year * 100 + week;
+  }
+  function getPlannerWeekYear(weekKey) {
+    return weekKey >= 100000 ? Math.floor(weekKey / 100) : 2026;
+  }
+  function getPlannerISOWeek(weekKey) {
+    return weekKey >= 100000 ? weekKey % 100 : weekKey;
+  }
+  function getPlannerCycleWeek(weekKey) {
+    // The A/B/C/D rotation continues across the 2026 -> 2027 boundary.
+    return weekKey >= 100000 ? 53 + getPlannerISOWeek(weekKey) : weekKey;
+  }
+  function addYearToPlanner(year) {
+    for (let week = 1; week <= isoWeekCount(year); week++) {
+      const key = getPlannerWeekKey(year, week);
+      const days = [];
+      for (let day = 0; day < 7; day++) {
+        const date = getDateForISOWeekDay(year, week, day);
+        const weekday = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getUTCDay()];
+        days.push(`${weekday} ${String(date.getUTCDate()).padStart(2, '0')}`);
+      }
+      weeks[key] = days;
+      weekMonths[key] = getDateForISOWeekDay(year, week, 3).toLocaleDateString('en-IE', { month: 'long', timeZone: 'UTC' });
+    }
+  }
+  // Include the final week of 2026, which was missing from the original file.
+  weeks[53] = Array.from({length:7}, (_, day) => {
+    const date = getDateForISOWeekDay(2026, 53, day);
+    return `${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getUTCDay()]} ${String(date.getUTCDate()).padStart(2, '0')}`;
+  });
+  weekMonths[53] = 'December';
+  addYearToPlanner(2027);
+
   const shiftEngineers = {
   A: [
     { initials: "JM", name: "John Malone" },
@@ -1235,6 +1286,9 @@ Call agency if needed"></textarea>
 const selectedEngineersList = document.getElementById('selectedEngineersList');
 const addEngineerSelect = document.getElementById('addEngineerSelect');
 const addEngineerBtn = document.getElementById('addEngineerBtn');
+const newTemplateEngineerFields = document.getElementById('newTemplateEngineerFields');
+const newTemplateEngineerName = document.getElementById('newTemplateEngineerName');
+const newTemplateEngineerInitials = document.getElementById('newTemplateEngineerInitials');
 const colorInput = document.getElementById('colorInput');
   const applyWeekInput = document.getElementById('applyWeekInput');
   const dayModalLabel = document.getElementById('dayModalLabel');
@@ -1280,12 +1334,13 @@ const closeOvertimeBtn = document.getElementById('closeOvertimeBtn');
   Object.keys(weeks).forEach(w => {
     const opt = document.createElement('option');
     opt.value = w;
-    opt.textContent = `Week ${w}`;
+    opt.textContent = `Week ${getPlannerISOWeek(+w)} (${getPlannerWeekYear(+w)})`;
     applyWeekInput.appendChild(opt);
   });
 
 let activeShift = 'A';
 let activeTemplateMembers = [];
+let pendingNewTemplateEngineers = [];
 let pendingTemplateData = null;
 let activeDayWeek = null;
 let activeDayIndex = null;
@@ -1300,7 +1355,7 @@ let unsubscribePlanner = null;
   let activeDayTypes = ['normal'];
 
   function weekPattern(week){
-    const phase = (week - 14) % 4;
+    const phase = (getPlannerCycleWeek(week) - 14) % 4;
     if(phase === 0) return [
       ['','','A','A','','',''],
       ['','','B','B','','',''],
@@ -1409,7 +1464,7 @@ function getEngineerByInitials(code, initials) {
 function formatShiftPeopleForEditor(code, data) {
   const members = getTemplateMembersFromData(code, data);
   return members.map(initials => {
-    const person = getEngineerByInitials(code, initials);
+    const person = getEngineerByInitialsGlobal(initials);
     if (!person) return initials;
     return `${person.name} (${person.initials})`;
   }).join('<br>');
@@ -1478,7 +1533,7 @@ function renderSelectedEngineers() {
     selectedEngineersList.innerHTML = `<div class="empty-engineer-note">No engineers added yet.</div>`;
   } else {
     selectedEngineersList.innerHTML = activeTemplateMembers.map(initials => {
-      const person = getEngineerByInitials(activeShift, initials);
+      const person = getEngineerByInitialsGlobal(initials) || pendingNewTemplateEngineers.find(e => e.initials === initials);
       const name = person ? person.name : initials;
 
       return `
@@ -1505,29 +1560,41 @@ function renderSelectedEngineers() {
 
 function renderAddEngineerOptions() {
   if (!addEngineerSelect) return;
-
-  const available = (shiftEngineers[activeShift] || []).filter(
-    person => !activeTemplateMembers.includes(person.initials)
-  );
-
-  if (!available.length) {
-    addEngineerSelect.innerHTML = `<option value="">No more engineers available</option>`;
-    addEngineerSelect.disabled = true;
-    addEngineerBtn.disabled = true;
-    return;
+  const previousChoice = addEngineerSelect.value;
+  // All previously registered engineers are available, regardless of shift.
+  const known = [...getAllEngineers(), ...pendingNewTemplateEngineers];
+  const unique = [...new Map(known.map(person => [person.initials.toUpperCase(), person])).values()];
+  const available = unique.filter(person => !activeTemplateMembers.includes(person.initials));
+  addEngineerSelect.innerHTML = '';
+  available.forEach(person => {
+    const option = document.createElement('option');
+    option.value = person.initials;
+    option.textContent = `${person.name} (${person.initials})`;
+    addEngineerSelect.appendChild(option);
+  });
+  const newOption = document.createElement('option');
+  newOption.value = '__new__';
+  newOption.textContent = '+ Add new engineer...';
+  addEngineerSelect.appendChild(newOption);
+  if ([...addEngineerSelect.options].some(option => option.value === previousChoice)) {
+    addEngineerSelect.value = previousChoice;
   }
-
   addEngineerSelect.disabled = false;
   addEngineerBtn.disabled = false;
-
-  addEngineerSelect.innerHTML = available.map(person => `
-    <option value="${person.initials}">${person.name} (${person.initials})</option>
-  `).join('');
+  updateNewTemplateEngineerFields();
+}
+function updateNewTemplateEngineerFields() {
+  const creating = addEngineerSelect.value === '__new__';
+  newTemplateEngineerFields.style.display = creating ? 'block' : 'none';
+  if (creating) newTemplateEngineerName.focus();
 }
 
 function openTemplateEditorForShift(code, shiftData) {
   activeShift = code;
   activeTemplateMembers = getTemplateMembersFromData(code, shiftData);
+  pendingNewTemplateEngineers = [];
+  newTemplateEngineerName.value = '';
+  newTemplateEngineerInitials.value = '';
 
   titleInput.value = shiftData.title;
   colorInput.value = shiftData.color;
@@ -1698,7 +1765,7 @@ function formatShiftTextWithExtras(shift) {
     const showNotes = isAdmin();
 
     let html = `<div class="table-card" data-week-card="${weekNumber}"><div class="${showNotes ? 'grid' : 'grid-no-notes'}">`;
-    html += `<div class="cell week-cell"><div><div>Week ${weekNumber}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]}</div></div></div>`;
+    html += `<div class="cell week-cell"><div><div>Week ${getPlannerISOWeek(weekNumber)}</div><div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.8">${weekMonths[weekNumber]} ${getPlannerWeekYear(weekNumber)}</div></div></div>`;
 
     days.forEach((day, dayIndex) => {
       const types = normalizeDayTypes((dayTypes[weekNumber] && dayTypes[weekNumber][dayIndex]) ? dayTypes[weekNumber][dayIndex] : 'normal');
@@ -1893,7 +1960,7 @@ requestAnimationFrame(() => {
 
       activeDayWeek = +el.dataset.dayWeek;
       activeDayIndex = +el.dataset.dayIndex;
-      dayModalLabel.textContent = `Week ${activeDayWeek} · ${weeks[activeDayWeek][activeDayIndex]}`;
+      dayModalLabel.textContent = `Week ${getPlannerISOWeek(activeDayWeek)} (${getPlannerWeekYear(activeDayWeek)}) · ${weeks[activeDayWeek][activeDayIndex]}`;
 
       const current = dayTypes[activeDayWeek][activeDayIndex];
 activeDayTypes = normalizeDayTypes(current);
@@ -1908,20 +1975,24 @@ dayModal.style.display = 'flex';
       if (!isAdmin()) return;
 
       activeNotesWeek = +el.dataset.notesWeek;
-      notesModalLabel.textContent = `Week ${activeNotesWeek}`;
+      notesModalLabel.textContent = `Week ${getPlannerISOWeek(activeNotesWeek)} (${getPlannerWeekYear(activeNotesWeek)})`;
       notesInput.value = weekNotes[activeNotesWeek] || '';
 
       notesModal.style.display = 'flex';
     };
   });
 }
-  function getCurrentWeekNumber() {
-  const now = new Date();
-  const start = new Date(Date.UTC(now.getFullYear(), 0, 1));
-  const diff = Math.floor((now - start) / 86400000);
-  return Math.ceil((diff + start.getUTCDay() + 1) / 7);
-}
-  const PLANNER_YEAR = 2026;
+  function getCurrentWeekKey() {
+    const now = new Date();
+    // Use the local calendar day, converted to a UTC calendar date.
+    const date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const weekday = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - weekday);
+    const isoYear = date.getUTCFullYear();
+    const yearStart = new Date(Date.UTC(isoYear, 0, 1));
+    const isoWeek = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return getPlannerWeekKey(isoYear, isoWeek);
+  }
 
 function getDateForISOWeekDay(year, week, dayIndex) {
   const simple = new Date(Date.UTC(year, 0, 4));
@@ -1935,7 +2006,7 @@ function getDateForISOWeekDay(year, week, dayIndex) {
 }
 
 function getMonthKeyFromWeekDay(weekNumber, dayIndex) {
-  const date = getDateForISOWeekDay(PLANNER_YEAR, weekNumber, dayIndex);
+  const date = getDateForISOWeekDay(getPlannerWeekYear(weekNumber), getPlannerISOWeek(weekNumber), dayIndex);
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
@@ -2051,7 +2122,7 @@ function renderSchedule(keepScrollPosition = false){
   const oldScrollY = window.scrollY;
   const oldHeight = document.documentElement.scrollHeight;
 
-  const currentWeek = getCurrentWeekNumber();
+  const currentWeek = getCurrentWeekKey();
   let visibleWeeks = Object.entries(weeks);
 
   if (!showPastWeeks) {
@@ -2086,7 +2157,7 @@ function getEngineerByInitialsGlobal(initials) {
     cards.innerHTML = '';
 
     Object.keys(templateVersions).forEach(key => {
-      const shift = getTemplateForWeek(key, 14);
+      const shift = getTemplateForWeek(key, Math.max(14, getCurrentWeekKey()));
 
       const el = document.createElement('div');
       el.className = 'card';
@@ -2162,19 +2233,30 @@ renderExtraEngineersList();
   };
 
 
-  cancelBtn.onclick = () => { modal.style.display='none'; };
+  cancelBtn.onclick = () => { modal.style.display='none'; pendingNewTemplateEngineers = []; };
+  addEngineerSelect.addEventListener('change', updateNewTemplateEngineerFields);
   addEngineerBtn.onclick = () => {
-  const initials = addEngineerSelect.value;
-
-  if (!initials) return;
-
-  if (activeTemplateMembers.includes(initials)) return;
-
-  activeTemplateMembers.push(initials);
-
-  renderSelectedEngineers();
-  renderAddEngineerOptions();
-};
+    let initials = addEngineerSelect.value;
+    if (!initials) return;
+    if (initials === '__new__') {
+      const name = newTemplateEngineerName.value.trim();
+      initials = newTemplateEngineerInitials.value.trim().toUpperCase();
+      if (!name || !/^[A-Z0-9]{1,12}$/.test(initials)) {
+        alert('Enter the full name and initials (1–12 letters/numbers).');
+        return;
+      }
+      if ([...getAllEngineers(), ...pendingNewTemplateEngineers].some(e => e.initials.toUpperCase() === initials)) {
+        alert('Those initials already exist. Select the existing engineer from the dropdown.');
+        return;
+      }
+      pendingNewTemplateEngineers.push({ name, initials });
+      newTemplateEngineerName.value = '';
+      newTemplateEngineerInitials.value = '';
+    }
+    if (!activeTemplateMembers.includes(initials)) activeTemplateMembers.push(initials);
+    renderSelectedEngineers();
+    renderAddEngineerOptions();
+  };
 
 
  saveBtn.onclick = () => {
@@ -2186,16 +2268,33 @@ renderExtraEngineersList();
     isRed: false
   };
   modal.style.display='none';
+  const currentWeek = getCurrentWeekKey();
+  applyWeekInput.value = weeks[currentWeek] ? String(currentWeek) : '202701';
   applyModal.style.display='flex';
 };
 
   cancelApplyBtn.onclick = () => {
     applyModal.style.display='none';
     pendingTemplateData = null;
+    pendingNewTemplateEngineers = [];
   };
 
   confirmApplyBtn.onclick = async () => {
+    if (!pendingTemplateData || !isAdmin()) return;
     const startWeek = +applyWeekInput.value;
+    if (!weeks[startWeek]) { alert('Select a valid start week.'); return; }
+    // Preserve manually edited cells: only the background template is changed.
+    // No changes to cellOverrides, weekNotes, dayTypes or any other existing data.
+    const existingCount = Object.keys(cellOverrides).filter(key => Number(key.split('-')[0]) >= startWeek).length;
+    if (!confirm(`Apply background template from Week ${getPlannerISOWeek(startWeek)} (${getPlannerWeekYear(startWeek)})?\n${existingCount} existing manual cell corrections will remain untouched.`)) return;
+    // Only register a new engineer if still selected in this template.
+    pendingNewTemplateEngineers = pendingNewTemplateEngineers.filter(e => activeTemplateMembers.includes(e.initials));
+    for (const engineer of pendingNewTemplateEngineers) {
+      if (!extraEngineers.some(e => e.initials.toUpperCase() === engineer.initials.toUpperCase())) {
+        extraEngineers.push({ ...engineer });
+      }
+    }
+    pendingNewTemplateEngineers = [];
     templateVersions[activeShift].push({ startWeek, data: JSON.parse(JSON.stringify(pendingTemplateData)) });
     templateVersions[activeShift].sort((a,b) => a.startWeek - b.startWeek);
     pendingTemplateData = null;
